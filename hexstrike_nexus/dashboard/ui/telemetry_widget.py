@@ -1,6 +1,7 @@
 try:
     from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QProgressBar,
-                                 QListWidget, QGroupBox, QFormLayout)
+                                 QListWidget, QGroupBox, QFormLayout, QMenu)
+    from PyQt6.QtCore import Qt
 except ImportError:
     class QWidget:
         def setLayout(self, l): pass
@@ -15,10 +16,21 @@ except ImportError:
         def addItem(self, i): pass
         def count(self): return 0
         def scrollToBottom(self): pass
+        def setContextMenuPolicy(self, p): pass
+        def itemAt(self, p): return None
+        def mapToGlobal(self, p): return p
     class QGroupBox:
         def setLayout(self, l): pass
     class QFormLayout:
         def addRow(self, l, w): pass
+    class QMenu:
+        def addAction(self, t): return "action"
+        def exec(self, p): return "action"
+    class Qt:
+        class ContextMenuPolicy:
+            CustomContextMenu = 1
+
+from ..core.api_client import APIClient
 
 class TelemetryWidget(QWidget):
     def __init__(self):
@@ -52,6 +64,12 @@ class TelemetryWidget(QWidget):
         self.cache_hits_label = QLabel("0")
         stats_layout.addRow("Cache Hits:", self.cache_hits_label)
 
+        self.cache_misses_label = QLabel("0")
+        stats_layout.addRow("Cache Misses:", self.cache_misses_label)
+
+        self.cache_size_label = QLabel("0 MB")
+        stats_layout.addRow("Cache Size:", self.cache_size_label)
+
         layout.addWidget(stats_group)
 
         # Active Processes
@@ -60,6 +78,13 @@ class TelemetryWidget(QWidget):
         proc_group.setLayout(proc_layout)
 
         self.process_list = QListWidget()
+        # Enable context menu
+        try:
+            self.process_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.process_list.customContextMenuRequested.connect(self.show_process_context_menu)
+        except AttributeError:
+            pass # Sandbox fallback
+
         proc_layout.addWidget(self.process_list)
 
         layout.addWidget(proc_group)
@@ -75,27 +100,51 @@ class TelemetryWidget(QWidget):
 
         layout.addWidget(log_group)
 
+    def show_process_context_menu(self, pos):
+        item = self.process_list.itemAt(pos)
+        if not item: return
+
+        menu = QMenu()
+        kill_action = menu.addAction("Terminate Process")
+        action = menu.exec(self.process_list.mapToGlobal(pos))
+
+        if action == kill_action:
+            self.terminate_selected_process(item)
+
+    def terminate_selected_process(self, item):
+        # Parse PID from string "[4021] masscan..."
+        text = item.text()
+        try:
+            pid_str = text.split(']')[0].strip('[')
+            APIClient.terminate_process(pid_str)
+            # Remove item from list immediately for feedback, though next update will sync
+            # self.process_list.takeItem(self.process_list.row(item))
+        except:
+            pass
+
     def update_data(self, data):
-        """
-        data = {
-            "cpu_usage": int,
-            "ram_usage": int,
-            "cache_hits": int,
-            "active_processes": [{"pid": int, "name": str, "status": str}, ...]
-        }
-        """
         self.cpu_bar.setValue(data.get("cpu_usage", 0))
         self.ram_bar.setValue(data.get("ram_usage", 0))
+        # Telemetry endpoint also has cache_hits, we use it here or override with cache stats
         self.cache_hits_label.setText(str(data.get("cache_hits", 0)))
 
+        # Only update process list if we are not hovering/interacting to avoid flicker?
+        # For simplicity, we just clear and add.
+        # Ideally, we diff the list.
         self.process_list.clear()
         for proc in data.get("active_processes", []):
             self.process_list.addItem(f"[{proc.get('pid')}] {proc.get('name')} - {proc.get('status')}")
 
+    def update_cache_stats(self, stats):
+        """
+        stats = {"hits": int, "misses": int, "size_mb": float}
+        """
+        if not stats: return
+        self.cache_hits_label.setText(str(stats.get("hits", 0)))
+        self.cache_misses_label.setText(str(stats.get("misses", 0)))
+        self.cache_size_label.setText(f"{stats.get('size_mb', 0):.2f} MB")
+
     def update_logs(self, log_data):
-        """
-        log_data = {"logs": ["line1", "line2"]}
-        """
         if not log_data:
             return
 
@@ -103,9 +152,7 @@ class TelemetryWidget(QWidget):
         for line in logs:
             self.log_display.addItem(line)
 
-        # Keep log buffer reasonable size
         if self.log_display.count() > 1000:
-            # Not easy to remove from top in QListWidget efficiently without loop, but for now ok
             pass
 
         self.log_display.scrollToBottom()

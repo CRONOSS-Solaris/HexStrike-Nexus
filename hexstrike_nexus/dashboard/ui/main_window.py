@@ -90,6 +90,11 @@ class MainWindow(QMainWindow):
             logs = APIClient.get_logs()
             if logs:
                 self.telemetry_widget.update_logs(logs)
+
+            # Fetch Cache Stats
+            cache_stats = APIClient.get_cache_stats()
+            if cache_stats:
+                self.telemetry_widget.update_cache_stats(cache_stats)
         else:
             self.chat_widget.set_server_status(False)
 

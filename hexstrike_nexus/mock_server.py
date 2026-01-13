@@ -45,6 +45,18 @@ class HexStrikeHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"logs": logs}).encode('utf-8'))
             return
 
+        if self.path == '/api/cache/stats':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            stats = {
+                "hits": random.randint(1000, 5000),
+                "misses": random.randint(10, 100),
+                "size_mb": round(random.uniform(10.0, 500.0), 2)
+            }
+            self.wfile.write(json.dumps(stats).encode('utf-8'))
+            return
+
         self.send_response(404)
         self.end_headers()
 
@@ -80,6 +92,14 @@ class HexStrikeHandler(http.server.SimpleHTTPRequestHandler):
                 "reasoning": "Standard web reconnaissance workflow selected."
             }
             self.wfile.write(json.dumps(response).encode('utf-8'))
+            return
+
+        if self.path.startswith('/api/processes/terminate/'):
+            pid = self.path.split('/')[-1]
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "terminated", "pid": pid}).encode('utf-8'))
             return
 
         self.send_response(404)
