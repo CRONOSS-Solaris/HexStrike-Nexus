@@ -10,6 +10,7 @@ try:
 except ImportError:
     class QWidget:
         def setLayout(self, l): pass
+        def setObjectName(self, n): pass
     class QVBoxLayout:
         def addWidget(self, w): pass
         def addLayout(self, l): pass
@@ -24,23 +25,28 @@ except ImportError:
         def setHtml(self, h): pass
         def page(self): return self
         def runJavaScript(self, s): pass
+    class Signal:
+        def connect(self, f): pass
+
     class QLineEdit:
+        def __init__(self): self.returnPressed = Signal()
         def text(self): return ""
         def clear(self): pass
-        def returnPressed(self): pass
-        def connect(self, f): pass
+        def setPlaceholderText(self, t): pass
     class QPushButton:
-        def clicked(self): pass
+        def __init__(self, t=""): self.clicked = Signal()
     class QComboBox:
         def addItems(self, i): pass
         def currentText(self): return ""
     class QLabel:
+        def __init__(self, t=""): pass
         def setText(self, t): pass
         def setStyleSheet(self, s): pass
     class Qt:
         pass
     HAS_WEBENGINE = False
 
+import html
 from ..core.ai_client import AIClient
 from ..core.database import DatabaseManager
 
@@ -151,12 +157,15 @@ class ChatWidget(QWidget):
         self.append_ai_message(response, agent)
 
     def append_user_message(self, text, agent):
-        self.display_message("Ty", text, "#00e5ff")
-        self.db.add_message("User", text, agent)
+        # Escape user input to prevent XSS
+        safe_text = html.escape(text)
+        self.display_message("Ty", safe_text, "#00e5ff")
+        self.db.add_message("User", safe_text, agent)
 
-    def append_ai_message(self, html, agent):
-        self.display_message("Nexus", html, "#7c4dff")
-        self.db.add_message("Nexus", html, agent)
+    def append_ai_message(self, html_content, agent):
+        # AI content is assumed to be safe HTML from our internal logic
+        self.display_message("Nexus", html_content, "#7c4dff")
+        self.db.add_message("Nexus", html_content, agent)
 
     def append_system_message(self, text):
         self.display_message("System", text, "#b0b3c5")
