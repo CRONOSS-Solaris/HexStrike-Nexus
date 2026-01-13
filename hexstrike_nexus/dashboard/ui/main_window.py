@@ -7,12 +7,16 @@ from .telemetry_widget import TelemetryWidget
 from .styles import HexStyle
 from ..core.api_client import APIClient
 from ..core.config import Config
+from ...i18n.manager import i18n
 
 class MainWindow(QMainWindow):
     def __init__(self, server_manager):
         super().__init__()
+        # Load language from config
+        i18n.load_language(Config.LANGUAGE)
+
         self.server_manager = server_manager
-        self.setWindowTitle(f"HexStrike Nexus v{Config.VERSION}")
+        self.setWindowTitle(i18n.get("window_title", version=Config.VERSION))
         self.resize(1200, 800)
 
         # Apply Global Styles
@@ -50,6 +54,7 @@ class MainWindow(QMainWindow):
     def update_status(self):
         # Update server status indicator
         if self.server_manager.is_running():
+            # TODO: Update status text in ChatWidget to use i18n if needed
             self.chat_widget.set_server_status(True)
             # Fetch telemetry
             data = APIClient.get_telemetry()

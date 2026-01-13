@@ -3,38 +3,48 @@ import sys
 import subprocess
 import shutil
 import time
+import json
+
+# Ensure we can import from hexstrike_nexus package if run directly
+try:
+    from hexstrike_nexus.i18n.manager import i18n
+except ImportError:
+    # If run from inside hexstrike_nexus or root without package structure
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from hexstrike_nexus.i18n.manager import i18n
 
 HEXSTRIKE_DIR = os.path.expanduser("~/.hexstrike/core")
+HEXSTRIKE_CONFIG = os.path.expanduser("~/.hexstrike/config.json")
 HEXSTRIKE_REPO = "https://github.com/0x4m4/hexstrike-ai.git"
 
 def print_status(message):
     print(f"[+] {message}")
 
 def check_system_deps():
-    print_status("Checking system dependencies...")
+    print_status(i18n.get("check_system_deps"))
     deps = ["git", "python3", "pip", "docker"]
     for dep in deps:
         if shutil.which(dep) is None:
-            print(f"[-] Missing dependency: {dep}")
+            print(i18n.get("missing_dep", dep=dep))
         else:
-            print_status(f"Found {dep}")
+            print_status(i18n.get("found_dep", dep=dep))
 
 def deploy_hexstrike():
-    print_status("Deploying HexStrike...")
+    print_status(i18n.get("deploying_hexstrike"))
     if os.path.exists(HEXSTRIKE_DIR):
-        print_status("HexStrike directory exists. Pulling latest...")
+        print_status(i18n.get("hexstrike_exists"))
         try:
             subprocess.run(["git", "-C", HEXSTRIKE_DIR, "pull"], check=True)
         except subprocess.CalledProcessError:
-            print("[-] Failed to update HexStrike repo.")
+            print(i18n.get("failed_update_repo"))
     else:
-        print_status(f"Cloning HexStrike to {HEXSTRIKE_DIR}...")
+        print_status(i18n.get("cloning_hexstrike", path=HEXSTRIKE_DIR))
         try:
             os.makedirs(os.path.dirname(HEXSTRIKE_DIR), exist_ok=True)
             subprocess.run(["git", "clone", HEXSTRIKE_REPO, HEXSTRIKE_DIR], check=True)
         except subprocess.CalledProcessError:
-            print("[-] Failed to clone HexStrike repo. This is expected if the repo is private or network is restricted.")
-            print("[!] Creating mock HexStrike directory for demonstration.")
+            print(i18n.get("failed_clone_repo"))
+            print(i18n.get("creating_mock_dir"))
             os.makedirs(HEXSTRIKE_DIR, exist_ok=True)
             with open(os.path.join(HEXSTRIKE_DIR, "requirements.txt"), "w") as f:
                 f.write("flask\nrequests\n")
@@ -42,31 +52,31 @@ def deploy_hexstrike():
     # Setup venv
     venv_dir = os.path.join(HEXSTRIKE_DIR, "venv")
     if not os.path.exists(venv_dir):
-        print_status("Creating virtual environment...")
+        print_status(i18n.get("creating_venv"))
         subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
 
     # Install requirements
     pip_exe = os.path.join(venv_dir, "bin", "pip")
     req_file = os.path.join(HEXSTRIKE_DIR, "requirements.txt")
     if os.path.exists(req_file) and os.path.exists(pip_exe):
-        print_status("Installing HexStrike requirements...")
+        print_status(i18n.get("installing_reqs"))
         subprocess.run([pip_exe, "install", "-r", req_file], check=True)
 
 def deploy_dashboard():
-    print_status("Deploying Dashboard dependencies...")
+    print_status(i18n.get("deploying_dashboard"))
     # Install dependencies from hexstrike_nexus/requirements.txt
     req_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "requirements.txt")
     if os.path.exists(req_path):
         try:
-            print_status(f"Installing dependencies from {req_path}...")
+            print_status(i18n.get("installing_deps_from", path=req_path))
             subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_path], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"[-] Failed to install dashboard dependencies: {e}")
+            print(i18n.get("failed_install_dashboard_deps", error=e))
     else:
-        print(f"[-] requirements.txt not found at {req_path}")
+        print(i18n.get("req_not_found", path=req_path))
 
 def install_tool(tool):
-    print_status(f"Attempting to install {tool}...")
+    print_status(i18n.get("attempt_install_tool", tool=tool))
 
     # Try go install (common for recon tools)
     if shutil.which("go"):
@@ -79,27 +89,27 @@ def install_tool(tool):
         if tool in go_tools:
             try:
                 subprocess.run(["go", "install", go_tools[tool]], check=True)
-                print_status(f"Installed {tool} via go.")
+                print_status(i18n.get("installed_via_go", tool=tool))
                 return True
             except Exception as e:
-                print(f"[-] Go install failed: {e}")
+                print(i18n.get("go_install_failed", error=e))
 
     # Try apt-get
     if shutil.which("apt-get"):
-        print(f"[!] Warning: About to run 'sudo apt-get install {tool}'. This requires sudo privileges.")
+        print(i18n.get("warning_apt_install", tool=tool))
         # In non-interactive mode or without password, this might fail.
         try:
             subprocess.run(["sudo", "apt-get", "install", "-y", tool], check=True)
-            print_status(f"Installed {tool} via apt.")
+            print_status(i18n.get("installed_via_apt", tool=tool))
             return True
         except Exception as e:
-            print(f"[-] Apt install failed (maybe missing sudo?): {e}")
+            print(i18n.get("apt_install_failed", error=e))
 
-    print(f"[-] Failed to install {tool} automatically. Please install manually.")
+    print(i18n.get("failed_install_auto", tool=tool))
     return False
 
 def check_tools():
-    print_status("Verifying security tools...")
+    print_status(i18n.get("verifying_tools"))
     tools = ["nmap", "gobuster", "nuclei", "subfinder"]
     missing = []
     for tool in tools:
@@ -107,14 +117,14 @@ def check_tools():
             missing.append(tool)
 
     if missing:
-        print(f"[!] Missing tools: {', '.join(missing)}.")
+        print(i18n.get("missing_tools", tools=', '.join(missing)))
         for tool in missing:
             install_tool(tool)
     else:
-        print_status("All core tools found.")
+        print_status(i18n.get("all_tools_found"))
 
 def create_desktop_shortcut():
-    print_status("Creating Linux Desktop Shortcut...")
+    print_status(i18n.get("creating_shortcut"))
 
     # Paths
     base_dir = os.path.dirname(os.path.abspath(__file__)) # hexstrike_nexus dir
@@ -130,9 +140,9 @@ def create_desktop_shortcut():
         import base64
         with open(icon_path, "wb") as f:
             f.write(base64.b64decode(icon_b64))
-        print_status(f"Icon created at {icon_path}")
+        print_status(i18n.get("icon_created", path=icon_path))
     except Exception as e:
-        print(f"[-] Failed to create icon: {e}")
+        print(i18n.get("failed_create_icon", error=e))
         icon_path = "utilities-terminal" # Fallback
 
     # 2. Create Desktop Entry
@@ -141,7 +151,7 @@ def create_desktop_shortcut():
         try:
             os.makedirs(desktop_dir)
         except OSError:
-            print(f"[-] Could not create {desktop_dir}. Skipping shortcut.")
+            print(i18n.get("failed_create_dir", path=desktop_dir))
             return
 
     entry_content = f"""[Desktop Entry]
@@ -163,20 +173,55 @@ StartupNotify=true
 
         # Make executable
         os.chmod(desktop_file, 0o755)
-        print_status(f"Shortcut created: {desktop_file}")
-        print_status("You may need to log out and back in for it to appear in menus.")
+        print_status(i18n.get("shortcut_created", path=desktop_file))
+        print_status(i18n.get("logout_hint"))
     except Exception as e:
-        print(f"[-] Failed to create desktop shortcut: {e}")
+        print(i18n.get("failed_create_shortcut", error=e))
+
+def select_language():
+    print(i18n.get("select_language"))
+    print(i18n.get("lang_en"))
+    print(i18n.get("lang_pl"))
+    choice = input(i18n.get("enter_choice"))
+
+    if choice.strip() == "2":
+        i18n.load_language("pl")
+        lang = "pl"
+    else:
+        i18n.load_language("en")
+        lang = "en"
+        if choice.strip() != "1":
+            print(i18n.get("invalid_choice"))
+
+    # Save to config
+    try:
+        os.makedirs(os.path.dirname(HEXSTRIKE_CONFIG), exist_ok=True)
+        config_data = {}
+        if os.path.exists(HEXSTRIKE_CONFIG):
+            try:
+                with open(HEXSTRIKE_CONFIG, "r") as f:
+                    config_data = json.load(f)
+            except:
+                pass
+
+        config_data["language"] = lang
+
+        with open(HEXSTRIKE_CONFIG, "w") as f:
+            json.dump(config_data, f, indent=4)
+
+    except Exception as e:
+        print(f"[-] Failed to save language preference: {e}")
 
 def main():
-    print("=== HexStrike Nexus Bootstrapper ===")
+    select_language()
+    print(i18n.get("bootstrapper_title"))
     check_system_deps()
     deploy_hexstrike()
     deploy_dashboard()
     check_tools()
     create_desktop_shortcut()
-    print("=== Installation Complete ===")
-    print("Run 'python3 hexstrike_nexus/main.py' to start the Dashboard.")
+    print(i18n.get("install_complete"))
+    print(i18n.get("run_instruction"))
 
 if __name__ == "__main__":
     main()

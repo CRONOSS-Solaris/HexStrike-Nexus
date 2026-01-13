@@ -49,6 +49,8 @@ except ImportError:
 import html
 from ..core.ai_client import AIClient
 from ..core.database import DatabaseManager
+from ...i18n.manager import i18n
+from ..core.config import Config
 
 class ChatWidget(QWidget):
     def __init__(self):
@@ -67,20 +69,22 @@ class ChatWidget(QWidget):
         # Header: Status, Agent Selector, Language
         header_layout = QHBoxLayout()
 
-        self.status_label = QLabel("HexStrike: DISCONNECTED")
+        self.status_label = QLabel(f"HexStrike: {i18n.get('server_status_off')}")
         self.status_label.setStyleSheet("color: #ff1744; font-weight: bold;")
         header_layout.addWidget(self.status_label)
 
         header_layout.addStretch()
 
         # Language Selector
-        header_layout.addWidget(QLabel("Język:"))
-        self.lang_selector = QComboBox()
-        self.lang_selector.addItems(["Polski", "English"])
-        header_layout.addWidget(self.lang_selector)
+        # header_layout.addWidget(QLabel("Język:"))
+        # self.lang_selector = QComboBox()
+        # self.lang_selector.addItems(["Polski", "English"])
+        # header_layout.addWidget(self.lang_selector)
+        # Using configured language instead of dynamic switching for now
+        # Dynamic switching would require reloading the whole UI
 
         # Agent Selector
-        header_layout.addWidget(QLabel("Agent:"))
+        header_layout.addWidget(QLabel(i18n.get("agent_label")))
         self.agent_selector = QComboBox()
         self.agent_selector.addItems([
             "BugBountyWorkflowManager",
@@ -104,11 +108,11 @@ class ChatWidget(QWidget):
         # Input Area
         input_layout = QHBoxLayout()
         self.input_field = QLineEdit()
-        self.input_field.setPlaceholderText("Wpisz polecenie (np. 'Zrób recon domeny example.com')...")
+        self.input_field.setPlaceholderText(i18n.get("chat_placeholder"))
         self.input_field.returnPressed.connect(self.send_message)
         input_layout.addWidget(self.input_field)
 
-        self.send_btn = QPushButton("Wyślij")
+        self.send_btn = QPushButton("->")
         self.send_btn.clicked.connect(self.send_message)
         input_layout.addWidget(self.send_btn)
 
@@ -118,7 +122,9 @@ class ChatWidget(QWidget):
         history = self.db.get_history(limit=20)
         # History rows: role, message, agent, timestamp
         if not history:
-             self.append_system_message("Witaj w HexStrike Nexus. Wybierz agenta i rozpocznij operację.")
+             # This is a system message, maybe translate? But history persists.
+             pass
+             # self.append_system_message("Witaj w HexStrike Nexus. Wybierz agenta i rozpocznij operację.")
              return
 
         for row in history:
@@ -132,10 +138,10 @@ class ChatWidget(QWidget):
 
     def set_server_status(self, is_online):
         if is_online:
-            self.status_label.setText("HexStrike: ONLINE")
+            self.status_label.setText(f"HexStrike: {i18n.get('server_status_on')}")
             self.status_label.setStyleSheet("color: #00e676; font-weight: bold;")
         else:
-            self.status_label.setText("HexStrike: OFFLINE")
+            self.status_label.setText(f"HexStrike: {i18n.get('server_status_off')}")
             self.status_label.setStyleSheet("color: #ff1744; font-weight: bold;")
 
     def send_message(self):
@@ -144,14 +150,16 @@ class ChatWidget(QWidget):
             return
 
         agent = self.agent_selector.currentText()
-        lang = self.lang_selector.currentText()
+
+        # Use globally configured language
+        lang = Config.LANGUAGE
 
         # Display and Save User Message
         self.append_user_message(user_text, agent)
         self.input_field.clear()
 
         # Process with AI
-        response = self.ai_client.process_user_request(user_text, agent, language="pl" if lang == "Polski" else "en")
+        response = self.ai_client.process_user_request(user_text, agent, language=lang)
 
         # Display and Save AI Message
         self.append_ai_message(response, agent)
