@@ -12,7 +12,7 @@ def print_status(message):
 
 def check_system_deps():
     print_status("Checking system dependencies...")
-    deps = ["git", "python3", "pip"]
+    deps = ["git", "python3", "pip", "docker"]
     for dep in deps:
         if shutil.which(dep) is None:
             print(f"[-] Missing dependency: {dep}")

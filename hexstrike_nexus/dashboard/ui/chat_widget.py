@@ -2,6 +2,11 @@ try:
     from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser,
                                  QLineEdit, QPushButton, QComboBox, QLabel)
     from PyQt6.QtCore import Qt
+    try:
+        from PyQt6.QtWebEngineWidgets import QWebEngineView
+        HAS_WEBENGINE = True
+    except ImportError:
+        HAS_WEBENGINE = False
 except ImportError:
     class QWidget:
         def setLayout(self, l): pass
@@ -14,11 +19,16 @@ except ImportError:
     class QTextBrowser:
         def append(self, t): pass
         def setHtml(self, h): pass
+        def setOpenExternalLinks(self, b): pass
+    class QWebEngineView:
+        def setHtml(self, h): pass
+        def page(self): return self
+        def runJavaScript(self, s): pass
     class QLineEdit:
         def text(self): return ""
         def clear(self): pass
         def returnPressed(self): pass
-        def connect(self, f): pass # Mocking signal
+        def connect(self, f): pass
     class QPushButton:
         def clicked(self): pass
     class QComboBox:
@@ -29,20 +39,25 @@ except ImportError:
         def setStyleSheet(self, s): pass
     class Qt:
         pass
+    HAS_WEBENGINE = False
 
 from ..core.ai_client import AIClient
+from ..core.database import DatabaseManager
 
 class ChatWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.ai_client = AIClient()
+        self.db = DatabaseManager()
+        self.html_content = "<html><body style='font-family: sans-serif; padding: 10px;'>"
         self.init_ui()
+        self.load_history()
 
     def init_ui(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # Header: Status & Agent Selector
+        # Header: Status, Agent Selector, Language
         header_layout = QHBoxLayout()
 
         self.status_label = QLabel("HexStrike: DISCONNECTED")
@@ -51,7 +66,14 @@ class ChatWidget(QWidget):
 
         header_layout.addStretch()
 
-        layout.addWidget(QLabel("Wybierz Agenta:"))
+        # Language Selector
+        header_layout.addWidget(QLabel("Język:"))
+        self.lang_selector = QComboBox()
+        self.lang_selector.addItems(["Polski", "English"])
+        header_layout.addWidget(self.lang_selector)
+
+        # Agent Selector
+        header_layout.addWidget(QLabel("Agent:"))
         self.agent_selector = QComboBox()
         self.agent_selector.addItems([
             "BugBountyWorkflowManager",
@@ -64,8 +86,12 @@ class ChatWidget(QWidget):
         layout.addLayout(header_layout)
 
         # Chat Area
-        self.chat_display = QTextBrowser()
-        self.chat_display.setOpenExternalLinks(True)
+        if HAS_WEBENGINE:
+            self.chat_display = QWebEngineView()
+        else:
+            self.chat_display = QTextBrowser()
+            self.chat_display.setOpenExternalLinks(True)
+
         layout.addWidget(self.chat_display)
 
         # Input Area
@@ -81,8 +107,21 @@ class ChatWidget(QWidget):
 
         layout.addLayout(input_layout)
 
-        # Welcome message
-        self.append_system_message("Witaj w HexStrike Nexus. Wybierz agenta i rozpocznij operację.")
+    def load_history(self):
+        history = self.db.get_history(limit=20)
+        # History rows: role, message, agent, timestamp
+        if not history:
+             self.append_system_message("Witaj w HexStrike Nexus. Wybierz agenta i rozpocznij operację.")
+             return
+
+        for row in history:
+            role, message, agent, timestamp = row
+            if role == "User":
+                self.display_message("Ty", message, "#007bff")
+            elif role == "Nexus":
+                self.display_message("Nexus", message, "#28a745")
+            else:
+                self.display_message("System", message, "#6c757d")
 
     def set_server_status(self, is_online):
         if is_online:
@@ -97,19 +136,40 @@ class ChatWidget(QWidget):
         if not user_text:
             return
 
-        self.append_user_message(user_text)
+        agent = self.agent_selector.currentText()
+        lang = self.lang_selector.currentText()
+
+        # Display and Save User Message
+        self.append_user_message(user_text, agent)
         self.input_field.clear()
 
         # Process with AI
-        agent = self.agent_selector.currentText()
-        response = self.ai_client.process_user_request(user_text, agent)
-        self.append_ai_message(response)
+        response = self.ai_client.process_user_request(user_text, agent, language="pl" if lang == "Polski" else "en")
 
-    def append_user_message(self, text):
-        self.chat_display.append(f"<div style='color: #007bff;'><b>Ty:</b> {text}</div>")
+        # Display and Save AI Message
+        self.append_ai_message(response, agent)
 
-    def append_ai_message(self, html):
-        self.chat_display.append(f"<div style='color: #28a745;'><b>Nexus:</b><br>{html}</div>")
+    def append_user_message(self, text, agent):
+        self.display_message("Ty", text, "#007bff")
+        self.db.add_message("User", text, agent)
+
+    def append_ai_message(self, html, agent):
+        self.display_message("Nexus", html, "#28a745")
+        self.db.add_message("Nexus", html, agent)
 
     def append_system_message(self, text):
-        self.chat_display.append(f"<div style='color: #6c757d;'><i>{text}</i></div>")
+        self.display_message("System", text, "#6c757d")
+        # System messages might not be saved or optional
+
+    def display_message(self, role, text, color):
+        div = f"<div style='color: {color}; margin-bottom: 10px;'><b>{role}:</b><br>{text}</div>"
+
+        if HAS_WEBENGINE and hasattr(self.chat_display, 'setHtml'):
+            self.html_content += div
+            self.chat_display.setHtml(self.html_content + "</body></html>")
+            # Scroll to bottom using JS
+            self.chat_display.page().runJavaScript("window.scrollTo(0, document.body.scrollHeight);")
+        else:
+            # QTextBrowser logic
+            # append automatically adds new line
+            self.chat_display.append(div)
