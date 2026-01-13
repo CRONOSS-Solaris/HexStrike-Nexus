@@ -1,41 +1,6 @@
-try:
-    from PyQt6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-                                 QLabel, QComboBox, QPushButton, QSplitter)
-    from PyQt6.QtCore import Qt, QTimer
-except ImportError:
-    # Dummy classes for validation in sandbox
-    class QMainWindow:
-        def setCentralWidget(self, w): pass
-        def show(self): pass
-        def setWindowTitle(self, t): pass
-        def resize(self, w, h): pass
-        def closeEvent(self, e): pass
-    class QWidget:
-        def setLayout(self, l): pass
-    class QHBoxLayout:
-        def addWidget(self, w): pass
-        def setContentsMargins(self, a,b,c,d): pass
-    class QVBoxLayout:
-        def addWidget(self, w): pass
-        def addLayout(self, l): pass
-        def setContentsMargins(self, a,b,c,d): pass
-    class QLabel:
-        def setText(self, t): pass
-        def setStyleSheet(self, s): pass
-    class QComboBox:
-        def addItems(self, i): pass
-        def currentText(self): return ""
-    class QPushButton:
-        def clicked(self): pass
-    class QSplitter:
-        def addWidget(self, w): pass
-        def setStretchFactor(self, i, f): pass
-    class Qt:
-        Horizontal = 1
-    class QTimer:
-        timeout = None
-        def start(self, ms): pass
-        def connect(self, f): pass
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
+                             QLabel, QComboBox, QPushButton, QSplitter)
+from PyQt6.QtCore import Qt, QTimer
 
 from .chat_widget import ChatWidget
 from .telemetry_widget import TelemetryWidget
