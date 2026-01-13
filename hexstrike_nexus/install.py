@@ -54,8 +54,16 @@ def deploy_hexstrike():
 
 def deploy_dashboard():
     print_status("Deploying Dashboard dependencies...")
-    # In a real scenario, we would install PyQt6 here.
-    pass
+    # Install dependencies from hexstrike_nexus/requirements.txt
+    req_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "requirements.txt")
+    if os.path.exists(req_path):
+        try:
+            print_status(f"Installing dependencies from {req_path}...")
+            subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_path], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"[-] Failed to install dashboard dependencies: {e}")
+    else:
+        print(f"[-] requirements.txt not found at {req_path}")
 
 def install_tool(tool):
     print_status(f"Attempting to install {tool}...")
@@ -78,12 +86,14 @@ def install_tool(tool):
 
     # Try apt-get
     if shutil.which("apt-get"):
+        print(f"[!] Warning: About to run 'sudo apt-get install {tool}'. This requires sudo privileges.")
+        # In non-interactive mode or without password, this might fail.
         try:
             subprocess.run(["sudo", "apt-get", "install", "-y", tool], check=True)
             print_status(f"Installed {tool} via apt.")
             return True
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[-] Apt install failed (maybe missing sudo?): {e}")
 
     print(f"[-] Failed to install {tool} automatically. Please install manually.")
     return False

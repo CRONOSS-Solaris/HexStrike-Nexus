@@ -109,7 +109,8 @@ class ReusableTCPServer(socketserver.TCPServer):
     allow_reuse_address = True
 
 def run_server():
-    with ReusableTCPServer(("", PORT), HexStrikeHandler) as httpd:
+    # Bind to localhost for security
+    with ReusableTCPServer(("127.0.0.1", PORT), HexStrikeHandler) as httpd:
         print(f"Serving Mock HexStrike Server on port {PORT}")
         httpd.serve_forever()
 
