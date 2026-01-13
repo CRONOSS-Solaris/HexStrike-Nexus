@@ -1,6 +1,7 @@
 import os
 
 class Config:
+    VERSION = "1.0.0"
     SERVER_PORT = 8888
     SERVER_URL = f"http://localhost:{SERVER_PORT}"
 

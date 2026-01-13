@@ -39,14 +39,19 @@ except ImportError:
 
 from .chat_widget import ChatWidget
 from .telemetry_widget import TelemetryWidget
+from .styles import HexStyle
 from ..core.api_client import APIClient
+from ..core.config import Config
 
 class MainWindow(QMainWindow):
     def __init__(self, server_manager):
         super().__init__()
         self.server_manager = server_manager
-        self.setWindowTitle("HexStrike Nexus")
+        self.setWindowTitle(f"HexStrike Nexus v{Config.VERSION}")
         self.resize(1200, 800)
+
+        # Apply Global Styles
+        self.setStyleSheet(HexStyle.APP_STYLE)
 
         self.init_ui()
 
@@ -85,6 +90,16 @@ class MainWindow(QMainWindow):
             data = APIClient.get_telemetry()
             if data:
                 self.telemetry_widget.update_data(data)
+
+            # Fetch logs
+            logs = APIClient.get_logs()
+            if logs:
+                self.telemetry_widget.update_logs(logs)
+
+            # Fetch Cache Stats
+            cache_stats = APIClient.get_cache_stats()
+            if cache_stats:
+                self.telemetry_widget.update_cache_stats(cache_stats)
         else:
             self.chat_widget.set_server_status(False)
 
