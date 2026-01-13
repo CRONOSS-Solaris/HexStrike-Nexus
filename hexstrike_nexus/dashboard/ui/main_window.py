@@ -85,6 +85,11 @@ class MainWindow(QMainWindow):
             data = APIClient.get_telemetry()
             if data:
                 self.telemetry_widget.update_data(data)
+
+            # Fetch logs
+            logs = APIClient.get_logs()
+            if logs:
+                self.telemetry_widget.update_logs(logs)
         else:
             self.chat_widget.set_server_status(False)
 

@@ -32,6 +32,19 @@ class HexStrikeHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(telemetry).encode('utf-8'))
             return
 
+        if self.path == '/api/logs':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            logs = [
+                f"[INFO] {time.strftime('%H:%M:%S')} - Scanning port {random.randint(1, 65535)}",
+                f"[DEBUG] {time.strftime('%H:%M:%S')} - Worker thread started",
+                f"[INFO] {time.strftime('%H:%M:%S')} - Nuclei scan in progress...",
+                f"[WARN] {time.strftime('%H:%M:%S')} - Rate limiting detected"
+            ] if random.random() > 0.3 else []
+            self.wfile.write(json.dumps({"logs": logs}).encode('utf-8'))
+            return
+
         self.send_response(404)
         self.end_headers()
 

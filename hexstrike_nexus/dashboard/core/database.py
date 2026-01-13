@@ -19,6 +19,12 @@ class DatabaseManager:
                       message TEXT,
                       timestamp REAL,
                       agent TEXT)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS results_cache
+                     (target TEXT,
+                      analysis_type TEXT,
+                      result_json TEXT,
+                      timestamp REAL,
+                      PRIMARY KEY (target, analysis_type))''')
         conn.commit()
         conn.close()
 
@@ -37,3 +43,21 @@ class DatabaseManager:
         rows = c.fetchall()
         conn.close()
         return rows
+
+    def cache_result(self, target, analysis_type, result_json):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("INSERT OR REPLACE INTO results_cache (target, analysis_type, result_json, timestamp) VALUES (?, ?, ?, ?)",
+                  (target, analysis_type, result_json, time.time()))
+        conn.commit()
+        conn.close()
+
+    def get_cached_result(self, target, analysis_type):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("SELECT result_json FROM results_cache WHERE target=? AND analysis_type=?", (target, analysis_type))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            return row[0]
+        return None

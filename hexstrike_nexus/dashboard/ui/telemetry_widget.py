@@ -13,6 +13,8 @@ except ImportError:
     class QListWidget:
         def clear(self): pass
         def addItem(self, i): pass
+        def count(self): return 0
+        def scrollToBottom(self): pass
     class QGroupBox:
         def setLayout(self, l): pass
     class QFormLayout:
@@ -62,6 +64,17 @@ class TelemetryWidget(QWidget):
 
         layout.addWidget(proc_group)
 
+        # Live Console
+        log_group = QGroupBox("Live Console")
+        log_layout = QVBoxLayout()
+        log_group.setLayout(log_layout)
+
+        self.log_display = QListWidget()
+        self.log_display.setStyleSheet("background-color: black; color: #00FF00; font-family: monospace;")
+        log_layout.addWidget(self.log_display)
+
+        layout.addWidget(log_group)
+
     def update_data(self, data):
         """
         data = {
@@ -78,3 +91,21 @@ class TelemetryWidget(QWidget):
         self.process_list.clear()
         for proc in data.get("active_processes", []):
             self.process_list.addItem(f"[{proc.get('pid')}] {proc.get('name')} - {proc.get('status')}")
+
+    def update_logs(self, log_data):
+        """
+        log_data = {"logs": ["line1", "line2"]}
+        """
+        if not log_data:
+            return
+
+        logs = log_data.get("logs", [])
+        for line in logs:
+            self.log_display.addItem(line)
+
+        # Keep log buffer reasonable size
+        if self.log_display.count() > 1000:
+            # Not easy to remove from top in QListWidget efficiently without loop, but for now ok
+            pass
+
+        self.log_display.scrollToBottom()

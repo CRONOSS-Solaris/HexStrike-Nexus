@@ -21,7 +21,7 @@ python3 hexstrike_nexus/main.py
 
 - **Dashboard AI**: Inteligentny asystent tłumaczący polecenia na akcje HexStrike.
 - **HexStrike Service Manager**: Automatyczne zarządzanie serwerem backendowym.
-- **Live Telemetry**: Podgląd zasobów i procesów w czasie rzeczywistym.
+- **Live Telemetry & Console**: Podgląd zasobów, procesów i logów (Live Console) w czasie rzeczywistym.
 - **Agent Selector**: Wybór specjalistycznych agentów (BugBounty, CTF, CVE).
 - **Auto-Update**: Automatyczne aktualizacje komponentów Nexus i Core.
 

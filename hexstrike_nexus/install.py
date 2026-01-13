@@ -16,8 +16,6 @@ def check_system_deps():
     for dep in deps:
         if shutil.which(dep) is None:
             print(f"[-] Missing dependency: {dep}")
-            # In a real scenario, we might try to install via apt/pacman,
-            # but for this script we just warn.
         else:
             print_status(f"Found {dep}")
 
@@ -60,6 +58,39 @@ def deploy_dashboard():
     # subprocess.check_call([sys.executable, "-m", "pip", "install", "PyQt6", "PyQt6-WebEngine"])
     pass
 
+def install_tool(tool):
+    print_status(f"Attempting to install {tool}...")
+
+    # Try go install (common for recon tools)
+    if shutil.which("go"):
+        go_tools = {
+            "nuclei": "github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest",
+            "subfinder": "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest",
+            "httpx": "github.com/projectdiscovery/httpx/cmd/httpx@latest",
+            "gobuster": "github.com/OJ/gobuster/v3@latest"
+        }
+        if tool in go_tools:
+            try:
+                subprocess.run(["go", "install", go_tools[tool]], check=True)
+                print_status(f"Installed {tool} via go.")
+                return True
+            except Exception as e:
+                print(f"[-] Go install failed: {e}")
+
+    # Try apt-get
+    if shutil.which("apt-get"):
+        try:
+            # Check if running as root or sudo is available, usually difficult in script without interactive password
+            # We assume user runs install.py with sufficient permissions or has sudo cached
+            subprocess.run(["sudo", "apt-get", "install", "-y", tool], check=True)
+            print_status(f"Installed {tool} via apt.")
+            return True
+        except Exception:
+            pass
+
+    print(f"[-] Failed to install {tool} automatically. Please install manually.")
+    return False
+
 def check_tools():
     print_status("Verifying security tools...")
     tools = ["nmap", "gobuster", "nuclei", "subfinder"]
@@ -69,7 +100,9 @@ def check_tools():
             missing.append(tool)
 
     if missing:
-        print(f"[!] Missing tools: {', '.join(missing)}. Please install them manually or run setup with --install-tools.")
+        print(f"[!] Missing tools: {', '.join(missing)}.")
+        for tool in missing:
+            install_tool(tool)
     else:
         print_status("All core tools found.")
 

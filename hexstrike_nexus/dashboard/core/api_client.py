@@ -13,6 +13,16 @@ class APIClient:
         return None
 
     @staticmethod
+    def get_logs():
+        try:
+            response = requests.get(f"{Config.SERVER_URL}/api/logs", timeout=1)
+            if response.status_code == 200:
+                return response.json()
+        except requests.RequestException:
+            pass
+        return None
+
+    @staticmethod
     def analyze_target(target, analysis_type="recon"):
         try:
             payload = {"target": target, "analysis_type": analysis_type}
