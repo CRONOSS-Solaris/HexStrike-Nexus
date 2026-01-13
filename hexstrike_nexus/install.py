@@ -56,9 +56,7 @@ def deploy_hexstrike():
 
 def deploy_dashboard():
     print_status("Deploying Dashboard dependencies...")
-    # In a real scenario, we would install PyQt6 here.
-    # subprocess.check_call([sys.executable, "-m", "pip", "install", "PyQt6", "PyQt6-WebEngine"])
-    pass
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyQt6", "PyQt6-WebEngine"])
 
 def check_tools():
     print_status("Verifying security tools...")
