@@ -35,6 +35,7 @@ from ..core.api_client import APIClient
 class TelemetryWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("TelemetryWidget")
         self.init_ui()
 
     def init_ui(self):
@@ -95,7 +96,7 @@ class TelemetryWidget(QWidget):
         log_group.setLayout(log_layout)
 
         self.log_display = QListWidget()
-        self.log_display.setStyleSheet("background-color: black; color: #00FF00; font-family: monospace;")
+        self.log_display.setStyleSheet("background-color: #0f111a; color: #00e676; font-family: monospace; border: 1px solid #2f344a;")
         log_layout.addWidget(self.log_display)
 
         layout.addWidget(log_group)

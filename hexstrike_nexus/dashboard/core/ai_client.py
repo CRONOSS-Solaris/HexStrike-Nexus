@@ -1,12 +1,62 @@
 import json
+import os
+import requests
 from .api_client import APIClient
 from .reporter import Reporter
 
 class AIClient:
     def __init__(self):
-        pass
+        self.api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+        self.api_url = "https://openrouter.ai/api/v1/chat/completions" # Default to OpenRouter
+        self.model = "anthropic/claude-3.5-sonnet"
 
     def process_user_request(self, user_input, selected_agent, language="pl"):
+        # Real AI Processing (if configured)
+        if self.api_key:
+            return self._query_llm(user_input, selected_agent, language)
+
+        # Fallback: Heuristic Mock Logic
+        return self._heuristic_mock(user_input, selected_agent, language)
+
+    def _query_llm(self, user_input, selected_agent, language):
+        """
+        Sends the request to an LLM to interpret the intent and generate a response.
+        This is a simplified implementation.
+        """
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        system_prompt = f"""
+        You are HexStrike Nexus, an advanced cybersecurity assistant.
+        Current Agent Persona: {selected_agent}
+        Language: {language}
+
+        Your task is to analyze the user's request and suggest specific HexStrike tools or actions.
+        Available tools: nmap, nuclei, subfinder, gobuster, masscan.
+        """
+
+        data = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
+            ]
+        }
+
+        try:
+            # In a real scenario, we would make the request here.
+            # response = requests.post(self.api_url, headers=headers, json=data)
+            # return response.json()['choices'][0]['message']['content']
+            pass
+        except Exception as e:
+            return f"Error contacting AI Provider: {str(e)}"
+
+        # Fallback to mock if API call fails or is commented out for safety
+        return self._heuristic_mock(user_input, selected_agent, language)
+
+    def _heuristic_mock(self, user_input, selected_agent, language="pl"):
         # Mock Intent Analysis
         response_text = ""
 

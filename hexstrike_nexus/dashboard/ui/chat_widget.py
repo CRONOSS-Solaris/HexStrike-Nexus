@@ -47,9 +47,10 @@ from ..core.database import DatabaseManager
 class ChatWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("ChatWidget")
         self.ai_client = AIClient()
         self.db = DatabaseManager()
-        self.html_content = "<html><body style='font-family: sans-serif; padding: 10px;'>"
+        self.html_content = "<html><body style='font-family: sans-serif; padding: 10px; background-color: #0f111a; color: #ffffff;'>"
         self.init_ui()
         self.load_history()
 
@@ -61,7 +62,7 @@ class ChatWidget(QWidget):
         header_layout = QHBoxLayout()
 
         self.status_label = QLabel("HexStrike: DISCONNECTED")
-        self.status_label.setStyleSheet("color: red; font-weight: bold;")
+        self.status_label.setStyleSheet("color: #ff1744; font-weight: bold;")
         header_layout.addWidget(self.status_label)
 
         header_layout.addStretch()
@@ -117,19 +118,19 @@ class ChatWidget(QWidget):
         for row in history:
             role, message, agent, timestamp = row
             if role == "User":
-                self.display_message("Ty", message, "#007bff")
+                self.display_message("Ty", message, "#00e5ff")
             elif role == "Nexus":
-                self.display_message("Nexus", message, "#28a745")
+                self.display_message("Nexus", message, "#7c4dff")
             else:
-                self.display_message("System", message, "#6c757d")
+                self.display_message("System", message, "#b0b3c5")
 
     def set_server_status(self, is_online):
         if is_online:
             self.status_label.setText("HexStrike: ONLINE")
-            self.status_label.setStyleSheet("color: green; font-weight: bold;")
+            self.status_label.setStyleSheet("color: #00e676; font-weight: bold;")
         else:
             self.status_label.setText("HexStrike: OFFLINE")
-            self.status_label.setStyleSheet("color: red; font-weight: bold;")
+            self.status_label.setStyleSheet("color: #ff1744; font-weight: bold;")
 
     def send_message(self):
         user_text = self.input_field.text().strip()
@@ -150,15 +151,15 @@ class ChatWidget(QWidget):
         self.append_ai_message(response, agent)
 
     def append_user_message(self, text, agent):
-        self.display_message("Ty", text, "#007bff")
+        self.display_message("Ty", text, "#00e5ff")
         self.db.add_message("User", text, agent)
 
     def append_ai_message(self, html, agent):
-        self.display_message("Nexus", html, "#28a745")
+        self.display_message("Nexus", html, "#7c4dff")
         self.db.add_message("Nexus", html, agent)
 
     def append_system_message(self, text):
-        self.display_message("System", text, "#6c757d")
+        self.display_message("System", text, "#b0b3c5")
         # System messages might not be saved or optional
 
     def display_message(self, role, text, color):

@@ -39,14 +39,19 @@ except ImportError:
 
 from .chat_widget import ChatWidget
 from .telemetry_widget import TelemetryWidget
+from .styles import HexStyle
 from ..core.api_client import APIClient
+from ..core.config import Config
 
 class MainWindow(QMainWindow):
     def __init__(self, server_manager):
         super().__init__()
         self.server_manager = server_manager
-        self.setWindowTitle("HexStrike Nexus")
+        self.setWindowTitle(f"HexStrike Nexus v{Config.VERSION}")
         self.resize(1200, 800)
+
+        # Apply Global Styles
+        self.setStyleSheet(HexStyle.APP_STYLE)
 
         self.init_ui()
 
