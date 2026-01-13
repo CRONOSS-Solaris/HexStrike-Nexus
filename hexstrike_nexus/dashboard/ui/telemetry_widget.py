@@ -31,6 +31,7 @@ except ImportError:
             CustomContextMenu = 1
 
 from ..core.api_client import APIClient
+from ...i18n.manager import i18n
 
 class TelemetryWidget(QWidget):
     def __init__(self):
@@ -43,7 +44,7 @@ class TelemetryWidget(QWidget):
         self.setLayout(layout)
 
         # Resources
-        res_group = QGroupBox("Zasoby Systemowe")
+        res_group = QGroupBox(i18n.get("system_resources"))
         res_layout = QFormLayout()
         res_group.setLayout(res_layout)
 
@@ -58,7 +59,7 @@ class TelemetryWidget(QWidget):
         layout.addWidget(res_group)
 
         # Stats
-        stats_group = QGroupBox("Statystyki HexStrike")
+        stats_group = QGroupBox(i18n.get("hexstrike_stats"))
         stats_layout = QFormLayout()
         stats_group.setLayout(stats_layout)
 
@@ -74,7 +75,7 @@ class TelemetryWidget(QWidget):
         layout.addWidget(stats_group)
 
         # Active Processes
-        proc_group = QGroupBox("Aktywne Procesy")
+        proc_group = QGroupBox(i18n.get("active_processes"))
         proc_layout = QVBoxLayout()
         proc_group.setLayout(proc_layout)
 
@@ -91,7 +92,7 @@ class TelemetryWidget(QWidget):
         layout.addWidget(proc_group)
 
         # Live Console
-        log_group = QGroupBox("Live Console")
+        log_group = QGroupBox(i18n.get("live_console"))
         log_layout = QVBoxLayout()
         log_group.setLayout(log_layout)
 
