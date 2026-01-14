@@ -555,14 +555,14 @@ class HexStyle:
             header_name = username or "You"
             return f"""
             <div class='message-container user-container'>
-                <div class='message-header'>👤 {header_name}</div>
+                <div class='message-header'>{header_name}</div>
                 <div class='message-bubble user-bubble'>{content}</div>
             </div>
             """
         elif role == "assistant":
             return f"""
             <div class='message-container ai-container'>
-                <div class='message-header'>🤖 HexStrike Nexus</div>
+                <div class='message-header'>HexStrike Nexus</div>
                 <div class='message-bubble ai-bubble'>{content}</div>
             </div>
             """

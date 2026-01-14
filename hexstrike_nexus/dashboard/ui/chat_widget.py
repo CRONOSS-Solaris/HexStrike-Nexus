@@ -58,15 +58,13 @@ class ChatWidget(QWidget):
         
         header_layout.addStretch()
         
-        # AI Provider status
-        self.ai_status_label = QLabel("⚪ No AI")
-        self.ai_status_label.setStyleSheet(f"color: {HexStyle.TEXT_SECONDARY}; font-size: 12px;")
-        header_layout.addWidget(self.ai_status_label)
-        
-        # Server Status
-        self.server_status_label = QLabel(i18n.get('server_status_off', default='Server: Offline'))
-        self.server_status_label.setStyleSheet(f"color: {HexStyle.STATUS_ERROR}; font-weight: bold; margin-left: 15px;")
-        header_layout.addWidget(self.server_status_label)
+        # Model selector dropdown
+        self.model_combo = QComboBox()
+        self.model_combo.setMinimumWidth(200)
+        self.model_combo.setMaximumWidth(300)
+        self.model_combo.setVisible(False)  # Hidden until AI is configured
+        self.model_combo.currentTextChanged.connect(self.on_model_changed)
+        header_layout.addWidget(self.model_combo)
 
         layout.addWidget(header)
 
@@ -98,7 +96,7 @@ class ChatWidget(QWidget):
         self.input_field.setMinimumHeight(50)
         input_layout.addWidget(self.input_field)
 
-        self.send_btn = QPushButton("Send ➜")
+        self.send_btn = QPushButton("Send")
         self.send_btn.setFixedSize(100, 50)
         self.send_btn.clicked.connect(self.send_message)
         input_layout.addWidget(self.send_btn)
@@ -115,7 +113,7 @@ class ChatWidget(QWidget):
         # Get conversation info
         conv_info = self.conversation_manager.get_conversation_info(conversation_id)
         if conv_info:
-            self.title_label.setText(f"💬 {conv_info.get('title', 'Untitled')}")
+            self.title_label.setText(f"{conv_info.get('title', 'Untitled')}")
         
         # Clear display and reload HTML template
         self.html_content = HexStyle.CHAT_HTML_TEMPLATE
@@ -157,7 +155,7 @@ class ChatWidget(QWidget):
         self.display_message("user", user_text, save_to_db=False)
         
         # Show thinking indicator
-        thinking_msg = self.display_message("system", "🤔 AI is thinking...", save_to_db=False)
+        thinking_msg = self.display_message("system", "AI is thinking...", save_to_db=False)
         
         try:
             # Get AI response (this also saves to DB)
@@ -178,7 +176,7 @@ class ChatWidget(QWidget):
             self._remove_last_message()
             
             # Show error
-            error_msg = f"⚠️ Error: {str(e)}"
+            error_msg = f"Error: {str(e)}"
             self.display_message("system", error_msg, save_to_db=False)
         
         finally:
@@ -247,30 +245,72 @@ class ChatWidget(QWidget):
         self.html_content = HexStyle.CHAT_HTML_TEMPLATE
         self._update_chat_display()
     
-    def set_server_status(self, is_online: bool):
-        """Update server status indicator"""
-        if is_online:
-            self.server_status_label.setText(i18n.get('server_status_on', default='Server: Online'))
-            self.server_status_label.setStyleSheet(f"color: {HexStyle.STATUS_SUCCESS}; font-weight: bold;")
-        else:
-            self.server_status_label.setText(i18n.get('server_status_off', default='Server: Offline'))
-            self.server_status_label.setStyleSheet(f"color: {HexStyle.STATUS_ERROR}; font-weight: bold;")
+    def on_model_changed(self, model_name: str):
+        """Handle model selection change"""
+        if not model_name or not self.current_conversation_id:
+            return
+        
+        # Get current provider info
+        provider_info = self.ai_client.get_current_provider_info()
+        if not provider_info:
+            return
+        
+        # Get API key from database and reconfigure with new model
+        db_config = self.ai_client.db.get_active_ai_provider()
+        if db_config:
+            self.ai_client.set_provider(
+                provider_info['name'],
+                db_config['api_key'],
+                model_name
+            )
     
-    def update_ai_status(self):
-        """Update AI provider status display"""
+    def update_ai_status(self, provider_name: str = None, model: str = None):
+        """Update AI provider status and model selector"""
         provider_info = self.ai_client.get_current_provider_info()
         
         if provider_info:
-            name = provider_info['name']
-            model = provider_info.get('model', 'unknown')
+            if provider_name is None:
+                provider_name = provider_info['name']
+            if model is None:
+                model = provider_info.get('model', 'unknown')
             
-            # Shorten model name for display
-            model_short = model.split('/')[-1] if '/' in model else model
-            if len(model_short) > 20:
-                model_short = model_short[:17] + "..."
+            # Update model dropdown
+            self.model_combo.blockSignals(True)  # Prevent triggering on_model_changed
+            self.model_combo.clear()
             
-            self.ai_status_label.setText(f"🤖 {name}: {model_short}")
-            self.ai_status_label.setStyleSheet(f"color: {HexStyle.STATUS_SUCCESS}; font-size: 12px; font-weight: 500;")
+            # Load available models for this provider
+            if provider_name == "openrouter":
+                models = [
+                    "anthropic/claude-3.5-sonnet",
+                    "anthropic/claude-3-opus",
+                    "openai/gpt-4o",
+                    "openai/gpt-4-turbo",
+                    "google/gemini-pro-1.5",
+                    "meta-llama/llama-3.1-70b-instruct"
+                ]
+            elif provider_name == "openai":
+                models = ["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
+            elif provider_name == "anthropic":
+                models = [
+                    "claude-3-5-sonnet-20241022",
+                    "claude-3-opus-20240229",
+                    "claude-3-sonnet-20240229",
+                    "claude-3-haiku-20240307"
+                ]
+            else:
+                models = [model]
+            
+            self.model_combo.addItems(models)
+            
+            # Set current model
+            index = self.model_combo.findText(model)
+            if index >= 0:
+                self.model_combo.setCurrentIndex(index)
+            else:
+                self.model_combo.setCurrentText(model)
+            
+            self.model_combo.setVisible(True)
+            self.model_combo.blockSignals(False)
             
             # Enable sending if conversation is loaded
             if self.current_conversation_id:
@@ -278,13 +318,12 @@ class ChatWidget(QWidget):
                 self.send_btn.setEnabled(True)
                 self.input_field.setPlaceholderText(i18n.get("chat_placeholder", default="Type your message..."))
         else:
-            self.ai_status_label.setText("⚪ No AI Provider")
-            self.ai_status_label.setStyleSheet(f"color: {HexStyle.TEXT_MUTED}; font-size: 12px;")
+            self.model_combo.setVisible(False)
             
             # Disable sending
             self.input_field.setEnabled(False)
             self.send_btn.setEnabled(False)
-            self.input_field.setPlaceholderText("⚠️ Configure AI provider in Settings")
+            self.input_field.setPlaceholderText("Configure AI provider in Settings")
     
     def get_current_conversation_id(self) -> Optional[str]:
         """Get current conversation ID"""

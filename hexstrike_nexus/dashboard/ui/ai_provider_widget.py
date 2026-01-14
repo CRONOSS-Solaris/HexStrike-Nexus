@@ -30,7 +30,7 @@ class AIProviderWidget(QWidget):
         self.setLayout(layout)
         
         # Title
-        title = QLabel("🤖 AI Provider Configuration")
+        title = QLabel("AI Provider Configuration")
         title.setObjectName("HeaderTitle")
         layout.addWidget(title)
         
@@ -64,7 +64,7 @@ class AIProviderWidget(QWidget):
         
         # Show/Hide API key toggle
         api_key_layout = QHBoxLayout()
-        self.show_key_btn = QPushButton("👁️ Show")
+        self.show_key_btn = QPushButton("Show")
         self.show_key_btn.setObjectName("SecondaryButton")
         self.show_key_btn.setMaximumWidth(80)
         self.show_key_btn.clicked.connect(self.toggle_api_key_visibility)
@@ -81,19 +81,19 @@ class AIProviderWidget(QWidget):
         layout.addWidget(config_group)
         
         # Status display
-        self.status_label = QLabel("⚪ Not configured")
+        self.status_label = QLabel("Not configured")
         self.status_label.setObjectName("SubTitle")
         layout.addWidget(self.status_label)
         
         # Action buttons
         button_layout = QHBoxLayout()
         
-        self.test_btn = QPushButton("🧪 Test Connection")
+        self.test_btn = QPushButton("Test Connection")
         self.test_btn.setObjectName("SecondaryButton")
         self.test_btn.clicked.connect(self.test_connection)
         button_layout.addWidget(self.test_btn)
         
-        self.save_btn = QPushButton("💾 Save & Activate")
+        self.save_btn = QPushButton("Save & Activate")
         self.save_btn.clicked.connect(self.save_configuration)
         button_layout.addWidget(self.save_btn)
         
@@ -138,8 +138,10 @@ class AIProviderWidget(QWidget):
                 "anthropic/claude-3-opus",
                 "openai/gpt-4o",
                 "openai/gpt-4-turbo",
+                "openai/gpt-4o-mini",
                 "google/gemini-pro-1.5",
-                "meta-llama/llama-3.1-70b-instruct"
+                "meta-llama/llama-3.1-70b-instruct",
+                "meta-llama/llama-3.1-405b-instruct"
             ]
         elif provider_name == "openai":
             models = [
@@ -166,10 +168,10 @@ class AIProviderWidget(QWidget):
         """Toggle API key visibility"""
         if self.api_key_input.echoMode() == QLineEdit.EchoMode.Password:
             self.api_key_input.setEchoMode(QLineEdit.EchoMode.Normal)
-            self.show_key_btn.setText("🔒 Hide")
+            self.show_key_btn.setText("Hide")
         else:
             self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
-            self.show_key_btn.setText("👁️ Show")
+            self.show_key_btn.setText("Show")
     
     def test_connection(self):
         """Test AI provider connection"""
@@ -185,7 +187,7 @@ class AIProviderWidget(QWidget):
             QMessageBox.warning(self, "Missing Model", "Please select or enter a model name.")
             return
         
-        self.status_label.setText("🔄 Testing connection...")
+        self.status_label.setText("Testing connection...")
         self.test_btn.setEnabled(False)
         
         try:
@@ -197,19 +199,19 @@ class AIProviderWidget(QWidget):
                 test_success, message = self.ai_client.test_connection()
                 
                 if test_success:
-                    self.status_label.setText(f"✅ {message}")
+                    self.status_label.setText(f"Connected: {provider_name} - {model}")
                     self.status_label.setStyleSheet(f"color: {HexStyle.STATUS_SUCCESS};")
                     QMessageBox.information(self, "Success", message)
                 else:
-                    self.status_label.setText(f"❌ {message}")
+                    self.status_label.setText(f"Failed: {message}")
                     self.status_label.setStyleSheet(f"color: {HexStyle.STATUS_ERROR};")
                     QMessageBox.warning(self, "Test Failed", message)
             else:
-                self.status_label.setText("❌ Failed to configure provider")
+                self.status_label.setText("Failed to configure provider")
                 self.status_label.setStyleSheet(f"color: {HexStyle.STATUS_ERROR};")
                 
         except Exception as e:
-            self.status_label.setText(f"❌ Error: {str(e)}")
+            self.status_label.setText(f"Error: {str(e)}")
             self.status_label.setStyleSheet(f"color: {HexStyle.STATUS_ERROR};")
             QMessageBox.critical(self, "Error", f"Failed to test connection:\n{str(e)}")
         
@@ -235,7 +237,7 @@ class AIProviderWidget(QWidget):
             success = self.ai_client.set_provider(provider_name, api_key, model)
             
             if success:
-                self.status_label.setText(f"✅ {provider_name} configured and activated")
+                self.status_label.setText(f"Active: {provider_name} - {model}")
                 self.status_label.setStyleSheet(f"color: {HexStyle.STATUS_SUCCESS};")
                 
                 QMessageBox.information(
@@ -270,11 +272,11 @@ class AIProviderWidget(QWidget):
             self.model_combo.setCurrentText(model)
             
             # Update status
-            self.status_label.setText(f"✅ Active: {provider_name} ({model})")
+            self.status_label.setText(f"Active: {provider_name} - {model}")
             self.status_label.setStyleSheet(f"color: {HexStyle.STATUS_SUCCESS};")
             
             # Note: We don't load the API key for security reasons
             self.api_key_input.setPlaceholderText("API key is saved (hidden for security)")
         else:
-            self.status_label.setText("⚪ No provider configured")
+            self.status_label.setText("No provider configured")
             self.status_label.setStyleSheet(f"color: {HexStyle.TEXT_SECONDARY};")

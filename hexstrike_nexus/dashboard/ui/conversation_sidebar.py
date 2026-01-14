@@ -38,7 +38,7 @@ class ConversationSidebar(QWidget):
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(10, 15, 10, 10)
         
-        title_label = QLabel("💬 Conversations")
+        title_label = QLabel("Conversations")
         title_label.setObjectName("SectionTitle")
         header_layout.addWidget(title_label)
         
@@ -54,7 +54,7 @@ class ConversationSidebar(QWidget):
         
         # Search box
         self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText("🔍 Search conversations...")
+        self.search_box.setPlaceholderText("Search conversations...")
         self.search_box.textChanged.connect(self.filter_conversations)
         self.search_box.setContentsMargins(10, 0, 10, 0)
         layout.addWidget(self.search_box)
@@ -82,31 +82,17 @@ class ConversationSidebar(QWidget):
         
         # Format display text
         title = conv.get('title', 'Untitled')
-        agent = conv.get('agent_type', 'General')
-        last_msg = conv.get('last_message', '')
-        msg_count = conv.get('message_count', 0)
-        
-        # Agent icon
-        agent_icons = {
-            'BugBountyWorkflowManager': '🎯',
-            'CTFWorkflowManager': '🏴',
-            'CVEIntelligenceManager': '🐛',
-            'AIExploitGenerator': '💣',
-            'General': '💬'
-        }
-        icon = agent_icons.get(agent, '💬')
         
         # Format timestamp
         updated_at = conv.get('updated_at', time.time())
         time_str = self.format_time(updated_at)
         
-        # Create rich text for item
-        display_text = f"{icon} {title}\n"
-        display_text += f"{last_msg[:50]}{'...' if len(last_msg) > 50 else ''}\n"
-        display_text += f"💬 {msg_count} • {time_str}"
+        # Create simpler text for item - no emoji, no agent icons
+        display_text = f"{title}\n"
+        display_text += f"{time_str}"
         
         item.setText(display_text)
-        item.setSizeHint(QSize(0, 70))
+        item.setSizeHint(QSize(0, 50))  # Reduced height for simpler display
         
         self.conversation_list.addItem(item)
     
@@ -133,11 +119,11 @@ class ConversationSidebar(QWidget):
         """Create new conversation - AI will name it automatically"""
         # Ask for agent type
         agents = {
-            'BugBountyWorkflowManager': '🎯 Bug Bounty',
-            'CTFWorkflowManager': '🏴 CTF',
-            'CVEIntelligenceManager': '🐛 CVE Intelligence',
-            'AIExploitGenerator': '💣 Exploit Dev',
-            'General': '💬 General'
+            'BugBountyWorkflowManager': 'Bug Bounty',
+            'CTFWorkflowManager': 'CTF',
+            'CVEIntelligenceManager': 'CVE Intelligence',
+            'AIExploitGenerator': 'Exploit Dev',
+            'General': 'General'
         }
         
         # Get agent selection
@@ -215,8 +201,8 @@ class ConversationSidebar(QWidget):
         """)
         
         # Only Delete and Archive actions - no Rename (AI names the chats)
-        delete_action = menu.addAction("🗑️ Delete")
-        archive_action = menu.addAction("📦 Archive")
+        delete_action = menu.addAction("Delete")
+        archive_action = menu.addAction("Archive")
         
         action = menu.exec(self.conversation_list.mapToGlobal(position))
         

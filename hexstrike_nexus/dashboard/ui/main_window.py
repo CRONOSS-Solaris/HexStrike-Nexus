@@ -49,9 +49,9 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.update_status)
         self.timer.start(2000)  # Every 2 seconds
         
-        # Check language first, then AI configuration
-        QTimer.singleShot(300, self.check_language_configuration)
-        QTimer.singleShot(500, self.check_ai_configuration)
+        # Check language immediately, then AI configuration
+        QTimer.singleShot(100, self.check_language_configuration)
+        QTimer.singleShot(600, self.check_ai_configuration)
     
     def init_ui(self):
         """Initialize UI with modern three-panel layout"""
@@ -94,26 +94,21 @@ class MainWindow(QMainWindow):
         top_bar_layout.setContentsMargins(10, 0, 10, 0)
         top_bar_layout.setSpacing(5)
         
-        # Navigation buttons
-        self.chat_nav_btn = QPushButton("💬 Chat")
+        # Navigation buttons  
+        self.chat_nav_btn = QPushButton("Chat")
         self.chat_nav_btn.setObjectName("ActiveTab")
         self.chat_nav_btn.clicked.connect(lambda: self.switch_view(0))
         top_bar_layout.addWidget(self.chat_nav_btn)
         
-        self.telemetry_nav_btn = QPushButton("📊 Telemetry")
+        self.telemetry_nav_btn = QPushButton("Telemetry")
         self.telemetry_nav_btn.clicked.connect(lambda: self.switch_view(1))
         top_bar_layout.addWidget(self.telemetry_nav_btn)
         
-        self.settings_nav_btn = QPushButton("⚙️ Settings")
+        self.settings_nav_btn = QPushButton("Settings")
         self.settings_nav_btn.clicked.connect(lambda: self.switch_view(2))
         top_bar_layout.addWidget(self.settings_nav_btn)
         
         top_bar_layout.addStretch()
-        
-        # AI provider status in top bar
-        self.top_ai_status = QLabel("⚪ No AI Provider")
-        self.top_ai_status.setStyleSheet(f"color: {HexStyle.TEXT_MUTED}; font-size: 12px; padding: 0 10px;")
-        top_bar_layout.addWidget(self.top_ai_status)
         
         main_layout.addWidget(top_bar)
         
@@ -168,14 +163,12 @@ class MainWindow(QMainWindow):
         
         main_layout.addWidget(self.main_splitter)
         
-        # Check if we have conversations, if not create a welcome one
+        # Load existing conversations - do not auto-create welcome conversation
         convs = self.conversation_manager.get_all_conversations()
-        if not convs:
-            self.create_welcome_conversation()
-        else:
+        if convs:
             # Select first conversation
             first_conv = convs[0]
-            self.conversation_sidebar.set_current_conversation(first_conv['id'])
+            self.conversation_sidebar.set_current_conversation(first_conv['id'])  
             self.chat_widget.load_conversation(first_conv['id'])
     
     def create_welcome_conversation(self):
@@ -307,7 +300,7 @@ Ready to begin? Configure your AI provider in Settings! 🚀
             layout.setContentsMargins(30, 30, 30, 30)
             
             # Title
-            title = QLabel("🌍 Choose Your Language / Wybierz Język")
+            title = QLabel("Choose Your Language / Wybierz Język")
             title.setObjectName("HeaderTitle")
             title.setStyleSheet(f"font-size: 18px; color: {HexStyle.ACCENT_PRIMARY};")
             layout.addWidget(title)
@@ -324,12 +317,12 @@ Ready to begin? Configure your AI provider in Settings! 🚀
             # Language options
             button_group = QButtonGroup(dialog)
             
-            radio_en = QRadioButton("🇬🇧 English")
+            radio_en = QRadioButton("English")
             radio_en.setStyleSheet(f"font-size: 14px; padding: 10px;")
             button_group.addButton(radio_en)
             layout.addWidget(radio_en)
             
-            radio_pl = QRadioButton("🇵🇱 Polski")
+            radio_pl = QRadioButton("Polski")
             radio_pl.setStyleSheet(f"font-size: 14px; padding: 10px;")
             button_group.addButton(radio_pl)
             layout.addWidget(radio_pl)
@@ -384,10 +377,9 @@ Ready to begin? Configure your AI provider in Settings! 🚀
         
         # Update top bar status
         model_short = model.split('/')[-1] if '/' in model else model
-        if len(model_short) > 15:
-            model_short = model_short[:12] + "..."
-        self.top_ai_status.setText(f"🤖 {provider_name}: {model_short}")
-        self.top_ai_status.setStyleSheet(f"color: {HexStyle.STATUS_SUCCESS}; font-size: 12px; padding: 0 10px; font-weight: 500;")
+        if len(model_short) > 20:
+            model_short = model_short[:17] + "..."
+        self.chat_widget.update_ai_status(provider_name, model_short)
         
         # Show success message
         QMessageBox.information(
@@ -406,15 +398,11 @@ Ready to begin? Configure your AI provider in Settings! 🚀
     
     def update_status(self):
         """Update status indicators"""
-        # Update server status
+        # Update server status if needed
         if self.server_manager.is_running():
-            self.chat_widget.set_server_status(True)
-            
             # Only update telemetry if visible
             if self.content_stack.currentIndex() == 1:
                 self.update_telemetry()
-        else:
-            self.chat_widget.set_server_status(False)
     
     def update_telemetry(self):
         """Update telemetry data"""
