@@ -31,36 +31,16 @@ def check_system_deps():
 
 def deploy_hexstrike():
     print_status(i18n.get("deploying_hexstrike"))
-    if os.path.exists(HEXSTRIKE_DIR):
-        print_status(i18n.get("hexstrike_exists"))
-        try:
-            subprocess.run(["git", "-C", HEXSTRIKE_DIR, "pull"], check=True)
-        except subprocess.CalledProcessError:
-            print(i18n.get("failed_update_repo"))
+    os.makedirs(HEXSTRIKE_DIR, exist_ok=True)
+
+    source_server_path = os.path.join(os.path.dirname(__file__), "hexstrike_server.py")
+    destination_server_path = os.path.join(HEXSTRIKE_DIR, "hexstrike_server.py")
+
+    if os.path.exists(source_server_path):
+        shutil.copy(source_server_path, destination_server_path)
+        print_status(f"Copied server to {destination_server_path}")
     else:
-        print_status(i18n.get("cloning_hexstrike", path=HEXSTRIKE_DIR))
-        try:
-            os.makedirs(os.path.dirname(HEXSTRIKE_DIR), exist_ok=True)
-            subprocess.run(["git", "clone", HEXSTRIKE_REPO, HEXSTRIKE_DIR], check=True)
-        except subprocess.CalledProcessError:
-            print(i18n.get("failed_clone_repo"))
-            print(i18n.get("creating_mock_dir"))
-            os.makedirs(HEXSTRIKE_DIR, exist_ok=True)
-            with open(os.path.join(HEXSTRIKE_DIR, "requirements.txt"), "w") as f:
-                f.write("flask\nrequests\n")
-
-    # Setup venv
-    venv_dir = os.path.join(HEXSTRIKE_DIR, "venv")
-    if not os.path.exists(venv_dir):
-        print_status(i18n.get("creating_venv"))
-        subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
-
-    # Install requirements
-    pip_exe = os.path.join(venv_dir, "bin", "pip")
-    req_file = os.path.join(HEXSTRIKE_DIR, "requirements.txt")
-    if os.path.exists(req_file) and os.path.exists(pip_exe):
-        print_status(i18n.get("installing_reqs"))
-        subprocess.run([pip_exe, "install", "-r", req_file], check=True)
+        print(f"Error: {source_server_path} not found!")
 
 def deploy_dashboard():
     print_status(i18n.get("deploying_dashboard"))
