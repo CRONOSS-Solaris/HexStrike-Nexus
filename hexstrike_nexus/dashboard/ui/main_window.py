@@ -3,7 +3,7 @@ Modern Main Window with three-panel layout
 """
 import os
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-                             QLabel, QStackedWidget, QSplitter, QMessageBox)
+                             QLabel, QStackedWidget, QSplitter, QMessageBox, QPushButton)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QIcon
 
