@@ -68,8 +68,10 @@ class HexStrikeInstaller:
         ]
         
         for dep in dependencies:
+            print(f"[*] Installing {dep}...")
+            
+            # Try normal installation first
             try:
-                print(f"[*] Installing {dep}...")
                 result = subprocess.run(
                     [sys.executable, "-m", "pip", "install", dep],
                     check=True,
@@ -77,10 +79,34 @@ class HexStrikeInstaller:
                     text=True
                 )
                 print(f"[✓] {dep} installed successfully")
+                continue
             except subprocess.CalledProcessError as e:
-                print(f"[✗] Failed to install{dep}")
-                print(f"[!] Error: {e.stderr}")
-                return False
+                # Check if it's externally-managed environment error
+                if "externally-managed-environment" in e.stderr or "externally managed" in e.stderr.lower():
+                    print(f"[!] System Python is externally managed, trying --user installation...")
+                    
+                    # Try with --user flag
+                    try:
+                        result = subprocess.run(
+                            [sys.executable, "-m", "pip", "install", "--user", dep],
+                            check=True,
+                            capture_output=True,
+                            text=True
+                        )
+                        print(f"[✓] {dep} installed successfully (user install)")
+                        continue
+                    except subprocess.CalledProcessError as e2:
+                        print(f"[✗] Failed to install {dep}")
+                        print(f"[!] Error: {e2.stderr}")
+                        print("\n[!] Alternative: Create a virtual environment:")
+                        print("    python3 -m venv hexstrike-env")
+                        print("    source hexstrike-env/bin/activate")
+                        print("    python -m pip install requests PyQt6 markdown")
+                        return False
+                else:
+                    print(f"[✗] Failed to install {dep}")
+                    print(f"[!] Error: {e.stderr}")
+                    return False
             except Exception as e:
                 print(f"[✗] Unexpected error installing {dep}: {e}")
                 return False
