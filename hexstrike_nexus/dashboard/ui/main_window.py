@@ -94,17 +94,17 @@ class MainWindow(QMainWindow):
         top_bar_layout.setContentsMargins(10, 0, 10, 0)
         top_bar_layout.setSpacing(5)
         
-        # Navigation buttons  
-        self.chat_nav_btn = QPushButton("Chat")
+        # Navigation buttons
+        self.chat_nav_btn = QPushButton(QIcon("hexstrike_nexus/icons/chat-round.svg"), "Chat")
         self.chat_nav_btn.setObjectName("ActiveTab")
         self.chat_nav_btn.clicked.connect(lambda: self.switch_view(0))
         top_bar_layout.addWidget(self.chat_nav_btn)
-        
-        self.telemetry_nav_btn = QPushButton("Telemetry")
+
+        self.telemetry_nav_btn = QPushButton(QIcon("hexstrike_nexus/icons/chart.svg"), "Telemetry")
         self.telemetry_nav_btn.clicked.connect(lambda: self.switch_view(1))
         top_bar_layout.addWidget(self.telemetry_nav_btn)
-        
-        self.settings_nav_btn = QPushButton("Settings")
+
+        self.settings_nav_btn = QPushButton(QIcon("hexstrike_nexus/icons/settings.svg"), "Settings")
         self.settings_nav_btn.clicked.connect(lambda: self.switch_view(2))
         top_bar_layout.addWidget(self.settings_nav_btn)
         
@@ -150,8 +150,8 @@ class MainWindow(QMainWindow):
         # Create tabbed interface for settings
         from PyQt6.QtWidgets import QTabWidget
         settings_tabs = QTabWidget()
-        settings_tabs.addTab(self.ai_provider_widget, "🤖 AI Provider")
-        settings_tabs.addTab(self.settings_widget, "⚙️ General")
+        settings_tabs.addTab(self.ai_provider_widget, "AI Provider")
+        settings_tabs.addTab(self.settings_widget, "General")
         
         settings_layout.addWidget(settings_tabs)
         self.content_stack.addWidget(settings_container)  # Index 2
