@@ -1,0 +1,9 @@
+#!/bin/bash
+
+read -p "Czy na pewno chcesz odinstalować Pakiety Python i inne? (t/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Tt]$ ]]
+then
+    pip uninstall -y hexstrike nexus
+    rm -rf hexstrike_nexus/
+fi
