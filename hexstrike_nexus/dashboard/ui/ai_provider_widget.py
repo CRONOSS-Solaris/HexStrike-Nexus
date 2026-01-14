@@ -132,47 +132,21 @@ class AIProviderWidget(QWidget):
         
     def on_provider_changed(self, provider_name: str):
         """Handle provider selection change"""
-        # Update model dropdown with provider-specific models
+        # Clear model field when provider changes
         self.model_combo.clear()
         
+        # Set helpful placeholder based on provider
         if provider_name == "openrouter":
-            models = [
-                "anthropic/claude-3.5-sonnet",
-                "anthropic/claude-3-opus",
-                "openai/gpt-4o",
-                "openai/gpt-4-turbo",
-                "openai/gpt-4o-mini",
-                "google/gemini-pro-1.5",
-                "meta-llama/llama-3.1-70b-instruct",
-                "meta-llama/llama-3.1-405b-instruct"
-            ]
+            self.model_combo.setPlaceholderText("e.g., anthropic/claude-3.5-sonnet, openai/gpt-4o")
         elif provider_name == "openai":
-            models = [
-                "gpt-4o",
-                "gpt-4-turbo",
-                "gpt-4",
-                "gpt-3.5-turbo"
-            ]
+            self.model_combo.setPlaceholderText("e.g., gpt-4o, gpt-4-turbo")
         elif provider_name == "anthropic":
-            models = [
-                "claude-3-5-sonnet-20241022",
-                "claude-3-opus-20240229",
-                "claude-3-sonnet-20240229",
-                "claude-3-haiku-20240307"
-            ]
+            self.model_combo.setPlaceholderText("e.g., claude-3-5-sonnet-20241022")
         elif provider_name == "gemini":
-            models = [
-                "gemini-1.5-pro-latest",
-                "gemini-1.5-flash-latest",
-                "gemini-pro",
-                "gemini-pro-vision"
-            ]
+            self.model_combo.setPlaceholderText("e.g., gemini-1.5-pro-latest, gemini-pro")
         else:
-            models = []
-        
-        self.model_combo.addItems(models)
-        if models:
-            self.model_combo.setCurrentIndex(0)
+            self.model_combo.setPlaceholderText("Enter model name...")
+    
     
     def toggle_api_key_visibility(self):
         """Toggle API key visibility"""

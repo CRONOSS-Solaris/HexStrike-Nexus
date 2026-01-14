@@ -260,41 +260,17 @@ class ChatWidget(QWidget):
             provider_name = provider_name or provider_info['name']
             model = model or provider_info.get('model', 'unknown')
             
+            # Make model combo editable so user can type any model
+            self.model_combo.setEditable(True)
+            self.model_combo.setPlaceholderText("Enter or select model...")
+            
             self.model_combo.blockSignals(True)
             self.model_combo.clear()
             
-            # Get list of configured providers (those with API keys)
-            configured_providers = self.ai_client.db.get_configured_providers()
-            
-            # Model lists for each provider
-            all_models_map = {
-                "openrouter": ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "google/gemini-pro-1.5", 
-                              "anthropic/claude-3-opus", "openai/gpt-4-turbo", "meta-llama/llama-3.1-70b-instruct"],
-                "openai": ["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
-                "anthropic": ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
-                "gemini": ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest", "gemini-pro", "gemini-pro-vision"]
-            }
-            
-            # Only show models from configured providers
-            available_models = []
-            for provider in configured_providers:
-                if provider in all_models_map:
-                    for model_name in all_models_map[provider]:
-                        # Add provider prefix if not already included
-                        display_name = f"{provider}: {model_name.split('/')[-1]}" if "/" not in model_name or provider != "openrouter" else model_name
-                        available_models.append((model_name, provider))
-            
-            # If no configured providers, show current model only
-            if not available_models:
-                available_models = [(model, provider_name)]
-            
-            # Add models to combo box
-            for model_name, _ in available_models:
-                self.model_combo.addItem(model_name)
-            
-            # Select current model
-            index = self.model_combo.findText(model)
-            self.model_combo.setCurrentIndex(index if index >= 0 else 0)
+            # Only show the current model, user can edit to change
+            if model:
+                self.model_combo.addItem(model)
+                self.model_combo.setCurrentIndex(0)
             
             self.model_combo.setVisible(True)
             self.model_combo.blockSignals(False)
