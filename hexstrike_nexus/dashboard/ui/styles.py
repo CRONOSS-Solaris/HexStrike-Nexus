@@ -6,11 +6,11 @@ Modern Cyberpunk-inspired Dark Theme for HexStrike Nexus
 class HexStyle:
     # ==================== COLOR PALETTE ====================
     
-    # Base / Background Colors - Deep Dark Mode
+    # Base / Background Colors - Deep Dark Mode with Glass Effect
     BG_MAIN = "#0a0a0f"           # Deepest background
-    BG_SECONDARY = "#131318"      # Sidebar, secondary panels
-    BG_TERTIARY = "#1a1a24"       # Cards, elevated elements
-    BG_QUATERNARY = "#252530"     # Input fields, hover states
+    BG_SECONDARY = "rgba(19, 19, 24, 0.85)"      # Sidebar - semi-transparent
+    BG_TERTIARY = "rgba(26, 26, 36, 0.65)"       # Cards - glass effect
+    BG_QUATERNARY = "rgba(37, 37, 48, 0.75)"     # Input fields - semi-transparent
     
     # Accent Colors - Vibrant Cyberpunk
     ACCENT_PRIMARY = "#7c3aed"    # Violet - main brand color
@@ -32,11 +32,11 @@ class HexStyle:
     TEXT_MUTED = "#6b7280"        # Muted gray - hints, placeholders
     TEXT_INVERSE = "#0a0a0f"      # Dark text on light backgrounds
     
-    # Border & Divider Colors
-    BORDER_LIGHT = "#252530"
-    BORDER_MEDIUM = "#3f3f46"
-    BORDER_HEAVY = "#52525b"
-    BORDER_ACCENT = "#7c3aed"
+    # Border & Divider Colors - Glass effect borders
+    BORDER_LIGHT = "rgba(255, 255, 255, 0.08)"
+    BORDER_MEDIUM = "rgba(255, 255, 255, 0.12)"
+    BORDER_HEAVY = "rgba(255, 255, 255, 0.18)"
+    BORDER_ACCENT = "rgba(124, 58, 237, 0.5)"
     
     # Gradient Definitions
     GRADIENT_PRIMARY = "qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #7c3aed, stop:1 #ec4899)"
@@ -72,7 +72,7 @@ class HexStyle:
         background-color: {BG_SECONDARY};
         border: none;
         outline: none;
-        border-right: 1px solid {BORDER_LIGHT};
+        border-right: 1px solid {BORDER_MEDIUM};
         padding: 10px 5px;
     }}
     
@@ -97,7 +97,7 @@ class HexStyle:
     
     /* === CONVERSATION SIDEBAR === */
     QListWidget#ConversationList {{
-        background-color: {BG_SECONDARY};
+        background-color: transparent;
         border: none;
         outline: none;
         padding: 5px;
@@ -106,20 +106,23 @@ class HexStyle:
     QListWidget#ConversationList::item {{
         padding: 14px 12px;
         margin: 3px 5px;
-        border-radius: 8px;
+        border-radius: 10px;
         background-color: {BG_TERTIARY};
+        border: 1px solid {BORDER_LIGHT};
         border-left: 3px solid transparent;
         min-height: 50px;
     }}
     
     QListWidget#ConversationList::item:hover {{
-        background-color: {BG_QUATERNARY};
-        border-left-color: {ACCENT_SECONDARY};
+        background-color: rgba(37, 37, 48, 0.85);
+        border: 1px solid {BORDER_MEDIUM};
+        border-left: 3px solid {ACCENT_SECONDARY};
     }}
     
     QListWidget#ConversationList::item:selected {{
-        background-color: {BG_QUATERNARY};
-        border-left-color: {ACCENT_PRIMARY};
+        background-color: rgba(37, 37, 48, 0.95);
+        border: 1px solid {BORDER_ACCENT};
+        border-left: 3px solid {ACCENT_PRIMARY};
     }}
     
     /* === BUTTONS === */
@@ -282,7 +285,7 @@ class HexStyle:
     /* === GROUP BOX === */
     QGroupBox {{
         background-color: {BG_TERTIARY};
-        border: 1px solid {BORDER_LIGHT};
+        border: 1px solid {BORDER_MEDIUM};
         border-radius: 12px;
         margin-top: 20px;
         padding-top: 10px;
@@ -295,7 +298,8 @@ class HexStyle:
         subcontrol-position: top left;
         padding: 4px 12px;
         left: 10px;
-        background-color: {BG_TERTIARY};
+        background-color: rgba(26, 26, 36, 0.85);
+        border: 1px solid {BORDER_LIGHT};
         border-radius: 6px;
         color: {ACCENT_SECONDARY};
     }}
@@ -437,9 +441,11 @@ class HexStyle:
             }}
             
             .ai-bubble {{
-                background-color: {BG_TERTIARY};
-                border: 1px solid {BORDER_LIGHT};
+                background-color: rgba(26, 26, 36, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.1);
                 border-bottom-left-radius: 4px;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
             }}
             
             /* System Messages */
@@ -448,12 +454,12 @@ class HexStyle:
             }}
             
             .system-bubble {{
-                background-color: transparent;
+                background-color: rgba(26, 26, 36, 0.3);
                 color: {TEXT_SECONDARY};
                 font-style: italic;
                 font-size: 13px;
                 text-align: center;
-                border: 1px dashed {BORDER_LIGHT};
+                border: 1px dashed rgba(255, 255, 255, 0.15);
                 border-radius: 8px;
             }}
             

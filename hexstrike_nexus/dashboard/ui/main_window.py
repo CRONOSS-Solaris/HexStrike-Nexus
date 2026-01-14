@@ -1,6 +1,7 @@
 """
 Modern Main Window with three-panel layout
 """
+import os
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                              QLabel, QStackedWidget, QSplitter, QMessageBox)
 from PyQt6.QtCore import Qt, QTimer
@@ -48,7 +49,8 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.update_status)
         self.timer.start(2000)  # Every 2 seconds
         
-        # Check if AI is configured, if not show prompt
+        # Check language first, then AI configuration
+        QTimer.singleShot(300, self.check_language_configuration)
         QTimer.singleShot(500, self.check_ai_configuration)
     
     def init_ui(self):
@@ -124,12 +126,42 @@ class MainWindow(QMainWindow):
     def create_welcome_conversation(self):
         """Create initial welcome conversation"""
         conv_id = self.conversation_manager.create_conversation(
-            "Welcome to HexStrike Nexus",
+            "Welcome to HexStrike Nexus" if Config.LANGUAGE == "en" else "Witaj w HexStrike Nexus",
             "General"
         )
         
-        # Add welcome message
-        welcome_msg = """# Welcome to HexStrike Nexus! 🎯
+        # Add welcome message based on language
+        if Config.LANGUAGE == "pl":
+            welcome_msg = """# Witaj w HexStrike Nexus! 🎯
+
+**Twój Zaawansowany Asystent Cyberbezpieczeństwa AI**
+
+Jestem zasilany najnowocześniejszym AI i frameworkiem HexStrike z 150+ narzędziami bezpieczeństwa.
+
+## Pierwsze Kroki
+
+1. **Skonfiguruj Providera AI** - Przejdź do Settings → AI Provider aby ustawić swój klucz API
+2. **Wybierz Swojego Agenta** - Każda konwersacja może używać różnych specjalistycznych agentów:
+   - 🎯 **Bug Bounty** - Testowanie bezpieczeństwa aplikacji webowych
+   - 🏴 **CTF** - Wyzwania Capture The Flag
+   - 🐛 **CVE Intelligence** - Badanie podatności
+   - 💣 **Exploit Dev** - Rozwój exploitów
+
+3. **Rozpocznij Rozmowę** - Poproś mnie o analizę celów, skanowanie podatności lub pomoc w zadaniach bezpieczeństwa!
+
+## Przykładowe Komendy
+
+- "Zeskanuj example.com pod kątem podatności"
+- "Pomóż mi rozwiązać to wyzwanie CTF"
+- "Znajdź CVE dla Apache 2.4.49"
+- "Wygeneruj exploit dla CVE-2021-xxxxx"
+
+**Uwaga:** Zawsze upewnij się, że masz odpowiednie uprawnienia przed testowaniem jakichkolwiek celów.
+
+Gotowy do rozpoczęcia? Skonfiguruj swojego providera AI w Ustawieniach! 🚀
+"""
+        else:
+            welcome_msg = """# Welcome to HexStrike Nexus! 🎯
 
 **Your Advanced Cybersecurity AI Assistant**
 
@@ -182,6 +214,75 @@ Ready to begin? Configure your AI provider in Settings! 🚀
             self.chat_widget.load_conversation(first_conv['id'])
         else:
             self.create_welcome_conversation()
+    
+    def check_language_configuration(self):
+        """Check if language is configured, prompt user if using default"""
+        # Check if config file exists - if not, this is first run
+        if not os.path.exists(Config.HEXSTRIKE_CONFIG):
+            # First time - ask for language
+            from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QButtonGroup, QRadioButton
+            
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Language Selection / Wybór Języka")
+            dialog.setModal(True)
+            dialog.setFixedSize(450, 250)
+            
+            layout = QVBoxLayout()
+            layout.setSpacing(20)
+            layout.setContentsMargins(30, 30, 30, 30)
+            
+            # Title
+            title = QLabel("🌍 Choose Your Language / Wybierz Język")
+            title.setObjectName("HeaderTitle")
+            title.setStyleSheet(f"font-size: 18px; color: {HexStyle.ACCENT_PRIMARY};")
+            layout.addWidget(title)
+            
+            # Description
+            desc = QLabel(
+                "Select your preferred language for the dashboard interface.\n"
+                "Wybierz preferowany język interfejsu dashboardu."
+            )
+            desc.setObjectName("SubTitle")
+            desc.setWordWrap(True)
+            layout.addWidget(desc)
+            
+            # Language options
+            button_group = QButtonGroup(dialog)
+            
+            radio_en = QRadioButton("🇬🇧 English")
+            radio_en.setStyleSheet(f"font-size: 14px; padding: 10px;")
+            button_group.addButton(radio_en)
+            layout.addWidget(radio_en)
+            
+            radio_pl = QRadioButton("🇵🇱 Polski")
+            radio_pl.setStyleSheet(f"font-size: 14px; padding: 10px;")
+            button_group.addButton(radio_pl)
+            layout.addWidget(radio_pl)
+            
+            # Default to English
+            radio_en.setChecked(True)
+            
+            layout.addStretch()
+            
+            # Confirm button
+            confirm_btn = QPushButton("Confirm / Potwierdź")
+            confirm_btn.setFixedHeight(45)
+            confirm_btn.clicked.connect(dialog.accept)
+            layout.addWidget(confirm_btn)
+            
+            dialog.setLayout(layout)
+            
+            # Show dialog
+            if dialog.exec():
+                # Save selected language
+                selected_lang = "pl" if radio_pl.isChecked() else "en"
+                Config.save_language(selected_lang)
+                
+                # Reload i18n with new language
+                i18n.load_language(selected_lang)
+                
+                # Update UI text
+                self.setWindowTitle(f"HexStrike Nexus v{Config.VERSION}")
     
     def check_ai_configuration(self):
         """Check if AI is configured, prompt user if not"""

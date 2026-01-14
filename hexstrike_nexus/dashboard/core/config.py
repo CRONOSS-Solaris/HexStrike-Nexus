@@ -26,3 +26,29 @@ class Config:
 
     # Use real server if available, otherwise use mock
     SERVER_SCRIPT_PATH = REAL_SERVER_PATH if os.path.exists(REAL_SERVER_PATH) else MOCK_SERVER_PATH
+    
+    @staticmethod
+    def save_language(language: str):
+        """Save language preference to config file"""
+        Config.LANGUAGE = language
+        
+        # Ensure directory exists
+        config_dir = os.path.dirname(Config.HEXSTRIKE_CONFIG)
+        os.makedirs(config_dir, exist_ok=True)
+        
+        # Load existing config or create new
+        config_data = {}
+        if os.path.exists(Config.HEXSTRIKE_CONFIG):
+            try:
+                with open(Config.HEXSTRIKE_CONFIG, "r") as f:
+                    config_data = json.load(f)
+            except:
+                pass
+        
+        # Update language
+        config_data["language"] = language
+        
+        # Save config
+        with open(Config.HEXSTRIKE_CONFIG, "w") as f:
+            json.dump(config_data, f, indent=2)
+

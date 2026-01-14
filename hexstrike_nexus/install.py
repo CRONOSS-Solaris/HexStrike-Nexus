@@ -1,207 +1,240 @@
+#!/usr/bin/env python3
+"""
+HexStrike Nexus Installation Script
+Handles installation of HexStrike Core and dependencies
+"""
 import os
 import sys
 import subprocess
 import shutil
-import time
 import json
+from pathlib import Path
 
-# Ensure we can import from hexstrike_nexus package if run directly
-try:
-    from hexstrike_nexus.i18n.manager import i18n
-except ImportError:
-    # If run from inside hexstrike_nexus or root without package structure
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from hexstrike_nexus.i18n.manager import i18n
 
-HEXSTRIKE_DIR = os.path.expanduser("~/.hexstrike/core")
-HEXSTRIKE_CONFIG = os.path.expanduser("~/.hexstrike/config.json")
-HEXSTRIKE_REPO = "https://github.com/0x4m4/hexstrike-ai.git"
-
-def print_status(message):
-    print(f"[+] {message}")
-
-def check_system_deps():
-    print_status(i18n.get("check_system_deps"))
-    deps = ["git", "python3", "pip", "docker"]
-    for dep in deps:
-        if shutil.which(dep) is None:
-            print(i18n.get("missing_dep", dep=dep))
-        else:
-            print_status(i18n.get("found_dep", dep=dep))
-
-def deploy_hexstrike():
-    print_status(i18n.get("deploying_hexstrike"))
-    os.makedirs(HEXSTRIKE_DIR, exist_ok=True)
-
-    source_server_path = os.path.join(os.path.dirname(__file__), "hexstrike_server.py")
-    destination_server_path = os.path.join(HEXSTRIKE_DIR, "hexstrike_server.py")
-
-    if os.path.exists(source_server_path):
-        shutil.copy(source_server_path, destination_server_path)
-        print_status(f"Copied server to {destination_server_path}")
-    else:
-        print(f"Error: {source_server_path} not found!")
-
-def deploy_dashboard():
-    print_status(i18n.get("deploying_dashboard"))
-    # Install dependencies from hexstrike_nexus/requirements.txt
-    req_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "requirements.txt")
-    if os.path.exists(req_path):
+class HexStrikeInstaller:
+    """Installer for HexStrike Nexus"""
+    
+    def __init__(self):
+        self.home_dir = Path.home()
+        self.hexstrike_dir = self.home_dir / ".hexstrike"
+        self.core_dir = self.hexstrike_dir / "core"
+        self.config_file = self.hexstrike_dir / "config.json"
+        
+    def print_banner(self):
+        """Print installation banner"""
+        banner = """
+╔═══════════════════════════════════════════════════════════╗
+║              HexStrike Nexus Installer                    ║
+║         Advanced Cybersecurity AI Framework               ║
+╚═══════════════════════════════════════════════════════════╝
+        """
+        print(banner)
+    
+    def check_python_version(self):
+        """Ensure Python version is 3.8+"""
+        print("[*] Checking Python version...")
+        if sys.version_info < (3, 8):
+            print("[✗] Error: Python 3.8 or higher is required")
+            print(f"[!] Current version: {sys.version}")
+            return False
+        print(f"[✓] Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+        return True
+    
+    def create_directories(self):
+        """Create necessary directories"""
+        print("[*] Creating directories...")
         try:
-            print_status(i18n.get("installing_deps_from", path=req_path))
-            subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_path], check=True)
-        except subprocess.CalledProcessError as e:
-            print(i18n.get("failed_install_dashboard_deps", error=e))
-    else:
-        print(i18n.get("req_not_found", path=req_path))
-
-def install_tool(tool):
-    print_status(i18n.get("attempt_install_tool", tool=tool))
-
-    # Try go install (common for recon tools)
-    if shutil.which("go"):
-        go_tools = {
-            "nuclei": "github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest",
-            "subfinder": "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest",
-            "httpx": "github.com/projectdiscovery/httpx/cmd/httpx@latest",
-            "gobuster": "github.com/OJ/gobuster/v3@latest"
-        }
-        if tool in go_tools:
-            try:
-                subprocess.run(["go", "install", go_tools[tool]], check=True)
-                print_status(i18n.get("installed_via_go", tool=tool))
-                return True
-            except Exception as e:
-                print(i18n.get("go_install_failed", error=e))
-
-    # Try apt-get
-    if shutil.which("apt-get"):
-        print(i18n.get("warning_apt_install", tool=tool))
-        # In non-interactive mode or without password, this might fail.
-        try:
-            subprocess.run(["sudo", "apt-get", "install", "-y", tool], check=True)
-            print_status(i18n.get("installed_via_apt", tool=tool))
+            self.hexstrike_dir.mkdir(parents=True, exist_ok=True)
+            self.core_dir.mkdir(parents=True, exist_ok=True)
+            print(f"[✓] Created directory: {self.hexstrike_dir}")
+            print(f"[✓] Created directory: {self.core_dir}")
             return True
+        except PermissionError:
+            print(f"[✗] Permission denied: Cannot create {self.hexstrike_dir}")
+            print("[!] Try running with appropriate permissions")
+            return False
         except Exception as e:
-            print(i18n.get("apt_install_failed", error=e))
-
-    print(i18n.get("failed_install_auto", tool=tool))
-    return False
-
-def check_tools():
-    print_status(i18n.get("verifying_tools"))
-    tools = ["nmap", "gobuster", "nuclei", "subfinder"]
-    missing = []
-    for tool in tools:
-        if shutil.which(tool) is None:
-            missing.append(tool)
-
-    if missing:
-        print(i18n.get("missing_tools", tools=', '.join(missing)))
-        for tool in missing:
-            install_tool(tool)
-    else:
-        print_status(i18n.get("all_tools_found"))
-
-def create_desktop_shortcut():
-    print_status(i18n.get("creating_shortcut"))
-
-    # Paths
-    base_dir = os.path.dirname(os.path.abspath(__file__)) # hexstrike_nexus dir
-    # main.py is in base_dir
-    main_script = os.path.join(base_dir, "main.py")
-    icon_path = os.path.join(base_dir, "icon.png")
-
-    # 1. Create Icon
-    # Simple red shield/circle 64x64 transparent PNG
-    icon_b64 = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIlSURBVHhe7ZqxSsRAEIb3YhUEwUYLQVvBztbOQqzsfAJ7H0G899jY2HgW9j6BvY2NhWChhWARwk3+M2wyq8nOZjcJ+2D4ITuzszP/ZGc3m0wKpVRS94Ff8A3b8A6r8A4D+IARvMEI3uADl/ALF/AL5/AJ5/AJZ3Aap/AKp/AKJ3ASx3ASx3ACx3ACR3AER3AIB3AAB9DDAfRQA/iCQ/iCQ/iEw/iEw6jiMIo4jCIOo4jDKOIwijj8O47g8P84gMP/4wAOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOo4jDKOIwijiMIg6jiMMo4jCKOIwiDqOIwyjiMIo4jCIOn8J7nMI7nMIrnMIrnMIpnMIpnMIpnMJJ/AJjY/YV8wvS+AAAAABJRU5ErkJggg=="
-
-    try:
-        import base64
-        with open(icon_path, "wb") as f:
-            f.write(base64.b64decode(icon_b64))
-        print_status(i18n.get("icon_created", path=icon_path))
-    except Exception as e:
-        print(i18n.get("failed_create_icon", error=e))
-        icon_path = "utilities-terminal" # Fallback
-
-    # 2. Create Desktop Entry
-    desktop_dir = os.path.expanduser("~/.local/share/applications")
-    if not os.path.exists(desktop_dir):
-        try:
-            os.makedirs(desktop_dir)
-        except OSError:
-            print(i18n.get("failed_create_dir", path=desktop_dir))
-            return
-
-    entry_content = f"""[Desktop Entry]
-Name=HexStrike Nexus
-Comment=Advanced AI-Powered Cybersecurity Dashboard
-Exec={sys.executable} {main_script}
-Icon={icon_path}
-Terminal=false
-Type=Application
-Categories=Development;Security;System;
-Keywords=hexstrike;security;ai;dashboard;
-StartupNotify=true
-"""
-
-    desktop_file = os.path.join(desktop_dir, "hexstrike-nexus.desktop")
-    try:
-        with open(desktop_file, "w") as f:
-            f.write(entry_content)
-
-        # Make executable
-        os.chmod(desktop_file, 0o755)
-        print_status(i18n.get("shortcut_created", path=desktop_file))
-        print_status(i18n.get("logout_hint"))
-    except Exception as e:
-        print(i18n.get("failed_create_shortcut", error=e))
-
-def select_language():
-    print(i18n.get("select_language"))
-    print(i18n.get("lang_en"))
-    print(i18n.get("lang_pl"))
-    choice = input(i18n.get("enter_choice"))
-
-    if choice.strip() == "2":
-        i18n.load_language("pl")
-        lang = "pl"
-    else:
-        i18n.load_language("en")
-        lang = "en"
-        if choice.strip() != "1":
-            print(i18n.get("invalid_choice"))
-
-    # Save to config
-    try:
-        os.makedirs(os.path.dirname(HEXSTRIKE_CONFIG), exist_ok=True)
-        config_data = {}
-        if os.path.exists(HEXSTRIKE_CONFIG):
+            print(f"[✗] Error creating directories: {e}")
+            return False
+    
+    def install_dependencies(self):
+        """Install Python dependencies"""
+        print("[*] Installing Python dependencies...")
+        
+        dependencies = [
+            "requests",
+            "PyQt6",
+            "markdown"
+        ]
+        
+        for dep in dependencies:
             try:
-                with open(HEXSTRIKE_CONFIG, "r") as f:
-                    config_data = json.load(f)
-            except:
-                pass
+                print(f"[*] Installing {dep}...")
+                result = subprocess.run(
+                    [sys.executable, "-m", "pip", "install", dep],
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                print(f"[✓] {dep} installed successfully")
+            except subprocess.CalledProcessError as e:
+                print(f"[✗] Failed to install{dep}")
+                print(f"[!] Error: {e.stderr}")
+                return False
+            except Exception as e:
+                print(f"[✗] Unexpected error installing {dep}: {e}")
+                return False
+        
+        return True
+    
+    def create_config(self):
+        """Create initial configuration file"""
+        print("[*] Creating configuration...")
+        
+        try:
+            # Note: Language will be selected on first dashboard launch
+            config = {
+                "version": "1.0.0",
+                "installed": True
+            }
+            
+            with open(self.config_file, 'w') as f:
+                json.dump(config, f, indent=2)
+            
+            print(f"[✓] Configuration created: {self.config_file}")
+            print("[i] Language will be selected on first dashboard launch")
+            return True
+            
+        except PermissionError:
+            print(f"[✗] Permission denied: Cannot write to {self.config_file}")
+            return False
+        except Exception as e:
+            print(f"[✗] Error creating config: {e}")
+            return False
+    
+    def clone_hexstrike_core(self):
+        """Clone or update HexStrike Core repository"""
+        print("[*] Setting up HexStrike Core...")
+        
+        repo_url = "https://github.com/CRONOSS-Solaris/HexStrike-Core.git"
+        
+        try:
+            if self.core_dir.exists() and (self.core_dir / ".git").exists():
+                print("[*] HexStrike Core already exists, updating...")
+                try:
+                    subprocess.run(
+                        ["git", "-C", str(self.core_dir), "pull"],
+                        check=True,
+                        capture_output=True,
+                        text=True
+                    )
+                    print("[✓] HexStrike Core updated")
+                except subprocess.CalledProcessError:
+                    print("[!] Git pull failed, attempting fresh clone...")
+                    shutil.rmtree(self.core_dir, ignore_errors=True)
+                    return self.clone_hexstrike_core()
+            else:
+                print(f"[*] Cloning HexStrike Core from {repo_url}...")
+                subprocess.run(
+                    ["git", "clone", repo_url, str(self.core_dir)],
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                print("[✓] HexStrike Core cloned successfully")
+            
+            return True
+            
+        except FileNotFoundError:
+            print("[✗] Git is not installed or not in PATH")
+            print("[!] Please install Git: https://git-scm.com/downloads")
+            return False
+        except subprocess.CalledProcessError as e:
+            print("[✗] Failed to clone/update HexStrike Core")
+            print(f"[!] Error: {e.stderr if e.stderr else 'Unknown error'}")
+            return False
+        except Exception as e:
+            print(f"[✗] Unexpected error: {e}")
+            return False
+    
+    def verify_installation(self):
+        """Verify that installation completed successfully"""
+        print("[*] Verifying installation...")
+        
+        checks = [
+            (self.hexstrike_dir.exists(), f"Directory {self.hexstrike_dir}"),
+            (self.core_dir.exists(), f"Directory {self.core_dir}"),
+            (self.config_file.exists(), f"Config file {self.config_file}"),
+        ]
+        
+        all_passed = True
+        for check, description in checks:
+            if check:
+                print(f"[✓] {description}")
+            else:
+                print(f"[✗] {description}")
+                all_passed = False
+        
+        return all_passed
+    
+    def run(self):
+        """Run the installation process"""
+        self.print_banner()
+        
+        steps = [
+            ("Checking Python version", self.check_python_version),
+            ("Creating directories", self.create_directories),
+            ("Installing dependencies", self.install_dependencies),
+            ("Creating configuration", self.create_config),
+            ("Setting up HexStrike Core", self.clone_hexstrike_core),
+            ("Verifying installation", self.verify_installation),
+        ]
+        
+        for step_name, step_func in steps:
+            print(f"\n{'='*60}")
+            print(f"Step: {step_name}")
+            print('='*60)
+            
+            try:
+                if not step_func():
+                    print(f"\n[✗] Installation failed at step: {step_name}")
+                    print("[!] Please fix the errors above and try again")
+                    return False
+            except KeyboardInterrupt:
+                print("\n\n[!] Installation cancelled by user")
+                return False
+            except Exception as e:
+                print(f"\n[✗] Unexpected error in {step_name}: {e}")
+                print("[!] Please report this issue with the error details")
+                return False
+        
+        print("\n" + "="*60)
+        print("✓ Installation completed successfully!")
+        print("="*60)
+        print("\nNext steps:")
+        print("1. Run: python -m hexstrike_nexus.main")
+        print("2. Select your preferred language (PL/EN)")
+        print("3. Configure your AI provider")
+        print("4. Start using HexStrike Nexus!")
+        print("\nFor help, visit: https://github.com/CRONOSS-Solaris/HexStrike-Nexus")
+        return True
 
-        config_data["language"] = lang
-
-        with open(HEXSTRIKE_CONFIG, "w") as f:
-            json.dump(config_data, f, indent=4)
-
-    except Exception as e:
-        print(f"[-] Failed to save language preference: {e}")
 
 def main():
-    select_language()
-    print(i18n.get("bootstrapper_title"))
-    check_system_deps()
-    deploy_hexstrike()
-    deploy_dashboard()
-    check_tools()
-    create_desktop_shortcut()
-    print(i18n.get("install_complete"))
-    print(i18n.get("run_instruction"))
+    """Main entry point"""
+    installer = HexStrikeInstaller()
+    
+    try:
+        success = installer.run()
+        sys.exit(0 if success else 1)
+    except KeyboardInterrupt:
+        print("\n\n[!] Installation cancelled")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n[✗] Fatal error: {e}")
+        print("[!] Please report this issue")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
