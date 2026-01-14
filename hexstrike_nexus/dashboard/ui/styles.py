@@ -88,7 +88,7 @@ class HexStyle:
     }}
     
     QListWidget#Sidebar::item:selected {{
-        background: {GRADIENT_PRIMARY};
+        background-color: {ACCENT_PRIMARY};
         color: {TEXT_PRIMARY};
         font-weight: 600;
     }}
