@@ -44,7 +44,7 @@ class ConversationSidebar(QWidget):
         
         header_layout.addStretch()
         
-        new_chat_btn = QPushButton("+ New")
+        new_chat_btn = QPushButton(QIcon("hexstrike_nexus/icons/plus.svg"), "")
         new_chat_btn.setObjectName("IconButton")
         new_chat_btn.clicked.connect(self.create_new_conversation)
         new_chat_btn.setToolTip("Create new conversation")
@@ -201,8 +201,8 @@ class ConversationSidebar(QWidget):
         """)
         
         # Only Delete and Archive actions - no Rename (AI names the chats)
-        delete_action = menu.addAction("Delete")
-        archive_action = menu.addAction("Archive")
+        delete_action = menu.addAction(QIcon("hexstrike_nexus/icons/trash-bin.svg"), "Delete")
+        archive_action = menu.addAction(QIcon("hexstrike_nexus/icons/archive.svg"), "Archive")
         
         action = menu.exec(self.conversation_list.mapToGlobal(position))
         
