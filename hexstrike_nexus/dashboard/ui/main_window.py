@@ -58,11 +58,66 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        main_layout = QHBoxLayout()
+        main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         central_widget.setLayout(main_layout)
         
+        # === TOP NAVIGATION BAR ===
+        top_bar = QWidget()
+        top_bar.setObjectName("TopBar")
+        top_bar.setStyleSheet(f"""
+            QWidget#TopBar {{
+                background-color: {HexStyle.BG_SECONDARY};
+                border-bottom: 1px solid {HexStyle.BORDER_MEDIUM};
+            }}
+            QPushButton {{
+                background-color: transparent;
+                color: {HexStyle.TEXT_SECONDARY};
+                border: none;
+                padding: 12px 24px;
+                font-size: 14px;
+                font-weight: 500;
+            }}
+            QPushButton:hover {{
+                background-color: {HexStyle.BG_TERTIARY};
+                color: {HexStyle.TEXT_PRIMARY};
+            }}
+            QPushButton#ActiveTab {{
+                color: {HexStyle.ACCENT_PRIMARY};
+                border-bottom: 2px solid {HexStyle.ACCENT_PRIMARY};
+            }}
+        """)
+        top_bar.setFixedHeight(50)
+        
+        top_bar_layout = QHBoxLayout(top_bar)
+        top_bar_layout.setContentsMargins(10, 0, 10, 0)
+        top_bar_layout.setSpacing(5)
+        
+        # Navigation buttons
+        self.chat_nav_btn = QPushButton("💬 Chat")
+        self.chat_nav_btn.setObjectName("ActiveTab")
+        self.chat_nav_btn.clicked.connect(lambda: self.switch_view(0))
+        top_bar_layout.addWidget(self.chat_nav_btn)
+        
+        self.telemetry_nav_btn = QPushButton("📊 Telemetry")
+        self.telemetry_nav_btn.clicked.connect(lambda: self.switch_view(1))
+        top_bar_layout.addWidget(self.telemetry_nav_btn)
+        
+        self.settings_nav_btn = QPushButton("⚙️ Settings")
+        self.settings_nav_btn.clicked.connect(lambda: self.switch_view(2))
+        top_bar_layout.addWidget(self.settings_nav_btn)
+        
+        top_bar_layout.addStretch()
+        
+        # AI provider status in top bar
+        self.top_ai_status = QLabel("⚪ No AI Provider")
+        self.top_ai_status.setStyleSheet(f"color: {HexStyle.TEXT_MUTED}; font-size: 12px; padding: 0 10px;")
+        top_bar_layout.addWidget(self.top_ai_status)
+        
+        main_layout.addWidget(top_bar)
+        
+        # === MAIN CONTENT AREA ===
         # Create main content splitter (conversations | chat)
         self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.main_splitter.setHandleWidth(1)
@@ -215,6 +270,26 @@ Ready to begin? Configure your AI provider in Settings! 🚀
         else:
             self.create_welcome_conversation()
     
+    def switch_view(self, index: int):
+        """Switch between Chat, Telemetry, Settings views"""
+        self.content_stack.setCurrentIndex(index)
+        
+        # Update active tab styling
+        self.chat_nav_btn.setObjectName("ActiveTab" if index == 0 else "")
+        self.telemetry_nav_btn.setObjectName("ActiveTab" if index == 1 else "")
+        self.settings_nav_btn.setObjectName("ActiveTab" if index == 2 else "")
+        
+        # Refresh styles
+        self.chat_nav_btn.setStyleSheet(self.chat_nav_btn.styleSheet())
+        self.telemetry_nav_btn.setStyleSheet(self.telemetry_nav_btn.styleSheet())
+        self.settings_nav_btn.setStyleSheet(self.settings_nav_btn.styleSheet())
+        
+        # Show/hide conversation sidebar based on view
+        if index == 0:  # Chat view
+            self.conversation_sidebar.show()
+        else:  # Telemetry or Settings
+            self.conversation_sidebar.hide()
+    
     def check_language_configuration(self):
         """Check if language is configured, prompt user if using default"""
         # Check if config file exists - if not, this is first run
@@ -307,6 +382,13 @@ Ready to begin? Configure your AI provider in Settings! 🚀
         # Update chat widget AI status
         self.chat_widget.update_ai_status()
         
+        # Update top bar status
+        model_short = model.split('/')[-1] if '/' in model else model
+        if len(model_short) > 15:
+            model_short = model_short[:12] + "..."
+        self.top_ai_status.setText(f"🤖 {provider_name}: {model_short}")
+        self.top_ai_status.setStyleSheet(f"color: {HexStyle.STATUS_SUCCESS}; font-size: 12px; padding: 0 10px; font-weight: 500;")
+        
         # Show success message
         QMessageBox.information(
             self,
@@ -316,7 +398,7 @@ Ready to begin? Configure your AI provider in Settings! 🚀
         )
         
         # Switch back to chat
-        self.content_stack.setCurrentIndex(0)
+        self.switch_view(0)
     
     def display_page(self, index: int):
         """Display specific page (for menu/shortcuts)"""

@@ -5,44 +5,42 @@ Modern Cyberpunk-inspired Dark Theme for HexStrike Nexus
 
 class HexStyle:
     # ==================== COLOR PALETTE ====================
+    # VS Code Inspired Theme
     
-    # Base / Background Colors - Deep Dark Mode with Glass Effect
-    BG_MAIN = "#0a0a0f"           # Deepest background
-    BG_SECONDARY = "rgba(19, 19, 24, 0.85)"      # Sidebar - semi-transparent
-    BG_TERTIARY = "rgba(26, 26, 36, 0.65)"       # Cards - glass effect
-    BG_QUATERNARY = "rgba(37, 37, 48, 0.75)"     # Input fields - semi-transparent
+    # Base / Background Colors - VS Code Dark
+    BG_MAIN = "#1e1e1e"           # Editor background
+    BG_SECONDARY = "#252526"      # Sidebar background
+    BG_TERTIARY = "#2d2d30"       # Elevated elements, hover
+    BG_QUATERNARY = "#3e3e42"     # Input fields, selection
     
-    # Accent Colors - Vibrant Cyberpunk
-    ACCENT_PRIMARY = "#7c3aed"    # Violet - main brand color
-    ACCENT_SECONDARY = "#06b6d4"  # Cyan - secondary actions
-    ACCENT_TERTIARY = "#ec4899"   # Pink - highlights, special
-    ACCENT_QUATERNARY = "#8b5cf6" # Light violet - hover states
+    # Accent Colors - VS Code Blue
+    ACCENT_PRIMARY = "#007acc"    # VS Code blue - main accent
+    ACCENT_SECONDARY = "#4ec9b0"  # Teal - secondary highlights
+    ACCENT_TERTIARY = "#569cd6"   # Light blue - tertiary
+    ACCENT_QUATERNARY = "#0098ff" # Bright blue - active states
     
-    # Status Colors
-    STATUS_SUCCESS = "#10b981"    # Emerald green
-    STATUS_ERROR = "#ef4444"      # Red
-    STATUS_WARNING = "#f59e0b"    # Amber
-    STATUS_INFO = "#3b82f6"       # Blue
-    STATUS_ONLINE = "#22c55e"     # Bright green
+    # Status Colors - VS Code
+    STATUS_SUCCESS = "#4ec9b0"   # Teal - success, online
+    STATUS_WARNING = "#dcdcaa"   # Yellow - warnings  
+    STATUS_ERROR = "#f48771"     # Coral red - errors
+    STATUS_INFO = "#569cd6"      # Light blue - information   STATUS_ONLINE = "#22c55e"     # Bright green
     STATUS_OFFLINE = "#64748b"    # Gray
     
-    # Text Colors
-    TEXT_PRIMARY = "#f8f9fa"      # Almost white - main text
-    TEXT_SECONDARY = "#9ca3af"    # Gray - secondary text
-    TEXT_MUTED = "#6b7280"        # Muted gray - hints, placeholders
-    TEXT_INVERSE = "#0a0a0f"      # Dark text on light backgrounds
+    # Text Colors - VS Code
+    TEXT_PRIMARY = "#cccccc"      # Main text
+    TEXT_SECONDARY = "#9cdcfe"    # Secondary text - light blue
+    TEXT_TERTIARY = "#808080"     # Tertiary text - gray
+    TEXT_MUTED = "#6a6a6a"        # Muted - hints, placeholders
+    TEXT_INVERSE = "#1e1e1e"      # Dark text
     
-    # Border & Divider Colors - Glass effect borders
-    BORDER_LIGHT = "rgba(255, 255, 255, 0.08)"
-    BORDER_MEDIUM = "rgba(255, 255, 255, 0.12)"
-    BORDER_HEAVY = "rgba(255, 255, 255, 0.18)"
-    BORDER_ACCENT = "rgba(124, 58, 237, 0.5)"
+    # Border & Divider Colors - VS Code
+    BORDER_LIGHT = "#2d2d30"
+    BORDER_MEDIUM = "#3e3e42"
+    BORDER_HEAVY = "#454545"
+    BORDER_ACCENT = "#007acc"
     
-    # Gradient Definitions
-    GRADIENT_PRIMARY = "qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #7c3aed, stop:1 #ec4899)"
-    GRADIENT_SECONDARY = "qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #06b6d4, stop:1 #7c3aed)"
-    GRADIENT_SUCCESS = "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10b981, stop:1 #06b6d4)"
-    GRADIENT_DARK = "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a24, stop:1 #0a0a0f)"
+    # No gradients in VS Code style - using solid accent color
+    ACCENT_SOLID = "#007acc"  # Use for buttons instead of gradients
     
     # Backward compatibility aliases for legacy components
     BG_SIDEBAR = BG_SECONDARY  # Old name compatibility
@@ -97,7 +95,7 @@ class HexStyle:
     
     /* === CONVERSATION SIDEBAR === */
     QListWidget#ConversationList {{
-        background-color: transparent;
+        background-color: {BG_SECONDARY};
         border: none;
         outline: none;
         padding: 5px;
@@ -106,90 +104,104 @@ class HexStyle:
     QListWidget#ConversationList::item {{
         padding: 14px 12px;
         margin: 3px 5px;
-        border-radius: 10px;
+        border-radius: 8px;
         background-color: {BG_TERTIARY};
-        border: 1px solid {BORDER_LIGHT};
         border-left: 3px solid transparent;
         min-height: 50px;
     }}
     
     QListWidget#ConversationList::item:hover {{
-        background-color: rgba(37, 37, 48, 0.85);
-        border: 1px solid {BORDER_MEDIUM};
-        border-left: 3px solid {ACCENT_SECONDARY};
+        background-color: {BG_QUATERNARY};
+        border-left-color: {ACCENT_SECONDARY};
     }}
     
     QListWidget#ConversationList::item:selected {{
-        background-color: rgba(37, 37, 48, 0.95);
-        border: 1px solid {BORDER_ACCENT};
-        border-left: 3px solid {ACCENT_PRIMARY};
+        background-color: {BG_QUATERNARY};
+        border-left-color: {ACCENT_PRIMARY};
     }}
     
     /* === BUTTONS === */
     QPushButton {{
-        background: {GRADIENT_PRIMARY};
+        background-color: {BG_TERTIARY};
         color: {TEXT_PRIMARY};
-        border: none;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-weight: 600;
-        font-size: 14px;
+        border: 1px solid {BORDER_MEDIUM};
+        border-radius: 2px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: normal;
     }}
     
     QPushButton:hover {{
-        background: {ACCENT_QUATERNARY};
+        background-color: {BG_QUATERNARY};
+        border-color: {BORDER_HEAVY};
     }}
     
     QPushButton:pressed {{
-        background: {ACCENT_TERTIARY};
+        background-color: {BG_SECONDARY};
     }}
     
     QPushButton:disabled {{
-        background-color: {BG_QUATERNARY};
+        background-color: {BG_SECONDARY};
         color: {TEXT_MUTED};
+        border-color: {BORDER_LIGHT};
+    }}
+    
+    /* Primary Button - VS Code Blue */
+    QPushButton#PrimaryButton {{
+        background-color: {ACCENT_PRIMARY};
+        color: #ffffff;
+        border: none;
+        font-weight: 500;
+    }}
+    
+    QPushButton#PrimaryButton:hover {{
+        background-color: {ACCENT_QUATERNARY};
     }}
     
     /* Secondary / Ghost Button */
     QPushButton#SecondaryButton {{
         background-color: transparent;
-        border: 2px solid {BORDER_MEDIUM};
+        border: 1px solid {BORDER_MEDIUM};
         color: {TEXT_PRIMARY};
     }}
     
     QPushButton#SecondaryButton:hover {{
         border-color: {ACCENT_PRIMARY};
-        background-color: rgba(124, 58, 237, 0.1);
+        background-color: rgba(0, 122, 204, 0.1); /* VS Code blue with transparency */
         color: {ACCENT_PRIMARY};
     }}
     
     /* Icon Button / Small Button */
     QPushButton#IconButton {{
-        padding: 8px;
-        min-width: 36px;
-        max-width: 36px;
-        min-height: 36px;
-        max-height: 36px;
-        border-radius: 6px;
+        padding: 4px;
+        min-width: 28px;
+        max-width: 28px;
+        min-height: 28px;
+        max-height: 28px;
+        border-radius: 2px;
         background-color: {BG_QUATERNARY};
+        border: 1px solid {BORDER_MEDIUM};
     }}
     
     QPushButton#IconButton:hover {{
         background-color: {ACCENT_PRIMARY};
+        border-color: {ACCENT_PRIMARY};
+        color: #ffffff;
     }}
     
     /* === INPUT FIELDS === */
     QLineEdit, QTextEdit, QPlainTextEdit {{
         background-color: {BG_QUATERNARY};
-        border: 2px solid {BORDER_LIGHT};
-        border-radius: 8px;
-        padding: 10px 14px;
+        border: 1px solid {BORDER_LIGHT};
+        border-radius: 2px;
+        padding: 6px 8px;
         color: {TEXT_PRIMARY};
         selection-background-color: {ACCENT_PRIMARY};
-        selection-color: {TEXT_PRIMARY};
+        selection-color: #ffffff;
     }}
     
     QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
-        border: 2px solid {ACCENT_PRIMARY};
+        border-color: {ACCENT_PRIMARY};
         background-color: {BG_TERTIARY};
     }}
     
@@ -298,8 +310,7 @@ class HexStyle:
         subcontrol-position: top left;
         padding: 4px 12px;
         left: 10px;
-        background-color: rgba(26, 26, 36, 0.85);
-        border: 1px solid {BORDER_LIGHT};
+        background-color: {BG_TERTIARY};
         border-radius: 6px;
         color: {ACCENT_SECONDARY};
     }}
@@ -424,15 +435,15 @@ class HexStyle:
                 position: relative;
             }}
             
-            /* User Messages */
+            /* User Messages - VS Code blue */
             .user-container {{
                 align-items: flex-end;
             }}
             
             .user-bubble {{
-                background: linear-gradient(135deg, {ACCENT_PRIMARY}, {ACCENT_TERTIARY});
-                color: {TEXT_PRIMARY};
-                border-bottom-right-radius: 4px;
+                background-color: {ACCENT_PRIMARY};
+                color: #ffffff;
+                border-bottom-right-radius: 2px;
             }}
             
             /* AI Messages */
@@ -441,11 +452,9 @@ class HexStyle:
             }}
             
             .ai-bubble {{
-                background-color: rgba(26, 26, 36, 0.7);
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-color: {BG_TERTIARY};
+                border: 1px solid {BORDER_LIGHT};
                 border-bottom-left-radius: 4px;
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
             }}
             
             /* System Messages */
@@ -454,12 +463,12 @@ class HexStyle:
             }}
             
             .system-bubble {{
-                background-color: rgba(26, 26, 36, 0.3);
+                background-color: transparent;
                 color: {TEXT_SECONDARY};
                 font-style: italic;
                 font-size: 13px;
                 text-align: center;
-                border: 1px dashed rgba(255, 255, 255, 0.15);
+                border: 1px dashed {BORDER_LIGHT};
                 border-radius: 8px;
             }}
             

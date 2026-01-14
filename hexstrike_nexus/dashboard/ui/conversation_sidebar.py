@@ -130,45 +130,47 @@ class ConversationSidebar(QWidget):
             return time.strftime("%b %d", time.localtime(timestamp))
     
     def create_new_conversation(self):
-        """Create new conversation"""
-        # Ask for title
-        title, ok = QInputDialog.getText(
+        """Create new conversation - AI will name it automatically"""
+        # Ask for agent type
+        agents = {
+            'BugBountyWorkflowManager': '🎯 Bug Bounty',
+            'CTFWorkflowManager': '🏴 CTF',
+            'CVEIntelligenceManager': '🐛 CVE Intelligence',
+            'AIExploitGenerator': '💣 Exploit Dev',
+            'General': '💬 General'
+        }
+        
+        # Get agent selection
+        from PyQt6.QtWidgets import QInputDialog
+        items = list(agents.values())
+        agent_display, ok = QInputDialog.getItem(
             self,
-            "New Conversation",
-            "Conversation title:",
-            text="New Chat"
+            "Select Agent Type",
+            "Choose the specialization for this conversation:",
+            items,
+            0,
+            False
         )
         
-        if ok and title:
-            # Ask for agent type
-            agents = [
-                'BugBountyWorkflowManager',
-                'CTFWorkflowManager',
-                'CVEIntelligenceManager',
-                'AIExploitGenerator',
-                'General'
-            ]
+        if ok:
+            # Map back to agent code
+            agent_reverse = {v: k for k, v in agents.items()}
+            agent_type = agent_reverse[agent_display]
             
-            agent, ok = QInputDialog.getItem(
-                self,
-                "Select Agent",
-                "Choose agent type:",
-                agents,
-                0,
-                False
+            # Create with temporary title - AI will rename it after first message
+            conv_id = self.conversation_manager.create_conversation(
+                "New Chat",  # Temporary - AI will auto-rename
+                agent_type
             )
+            self.refresh_conversations()
             
-            if ok:
-                conv_id = self.conversation_manager.create_conversation(title, agent)
-                self.refresh_conversations()
-                
-                # Select the new conversation
-                for i in range(self.conversation_list.count()):
-                    item = self.conversation_list.item(i)
-                    if item.data(Qt.ItemDataRole.UserRole) == conv_id:
-                        self.conversation_list.setCurrentItem(item)
-                        self.on_conversation_clicked(item)
-                        break
+            # Select the new conversation
+            for i in range(self.conversation_list.count()):
+                item = self.conversation_list.item(i)
+                if item.data(Qt.ItemDataRole.UserRole) == conv_id:
+                    self.conversation_list.setCurrentItem(item)
+                    self.on_conversation_clicked(item)
+                    break
     
     def on_conversation_clicked(self, item: QListWidgetItem):
         """Handle conversation selection"""
@@ -189,44 +191,39 @@ class ConversationSidebar(QWidget):
             item.setHidden(search_text not in item_text)
     
     def show_context_menu(self, position):
-        """Show context menu for conversation"""
+        """Show context menu for conversation item"""
         item = self.conversation_list.itemAt(position)
         if not item:
             return
         
-        conv_id = item.data(Qt.ItemDataRole.UserRole)
+        conversation_id = item.data(Qt.ItemDataRole.UserRole)
         
         menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {HexStyle.BG_TERTIARY};
+                border: 1px solid {HexStyle.BORDER_MEDIUM};
+                padding: 5px;
+            }}
+            QMenu::item {{
+                padding: 8px 20px;
+                color: {HexStyle.TEXT_PRIMARY};
+            }}
+            QMenu::item:selected {{
+                background-color: {HexStyle.BG_QUATERNARY};
+            }}
+        """)
         
-        rename_action = menu.addAction("✏️ Rename")
+        # Only Delete and Archive actions - no Rename (AI names the chats)
         delete_action = menu.addAction("🗑️ Delete")
-        menu.addSeparator()
         archive_action = menu.addAction("📦 Archive")
         
         action = menu.exec(self.conversation_list.mapToGlobal(position))
         
-        if action == rename_action:
-            self.rename_conversation(conv_id, item)
-        elif action == delete_action:
-            self.delete_conversation(conv_id)
+        if action == delete_action:
+            self.delete_conversation(conversation_id)
         elif action == archive_action:
-            self.archive_conversation(conv_id)
-    
-    def rename_conversation(self, conv_id: str, item: QListWidgetItem):
-        """Rename conversation"""
-        conv_info = self.conversation_manager.get_conversation_info(conv_id)
-        current_title = conv_info.get('title', 'Untitled')
-        
-        new_title, ok = QInputDialog.getText(
-            self,
-            "Rename Conversation",
-            "New title:",
-            text=current_title
-        )
-        
-        if ok and new_title:
-            self.conversation_manager.update_conversation_title(conv_id, new_title)
-            self.refresh_conversations()
+            self.archive_conversation(conversation_id)
     
     def delete_conversation(self, conv_id: str):
         """Delete conversation with confirmation"""
