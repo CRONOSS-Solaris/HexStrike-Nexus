@@ -39,8 +39,8 @@ class SettingsWidget(QWidget):
         form.setContentsMargins(20, 25, 20, 20)
         form.setSpacing(15)
         
-        self.host_input = QLineEdit(Config.HOST)
-        self.port_input = QLineEdit(str(Config.PORT))
+        self.host_input = QLineEdit("localhost") # Config.HOST not available, defaulting to localhost
+        self.port_input = QLineEdit(str(Config.SERVER_PORT))
         
         form.addRow(QLabel("Server Host:"), self.host_input)
         form.addRow(QLabel("Server Port:"), self.port_input)
