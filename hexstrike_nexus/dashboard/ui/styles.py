@@ -44,6 +44,14 @@ class HexStyle:
     GRADIENT_SUCCESS = "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10b981, stop:1 #06b6d4)"
     GRADIENT_DARK = "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a24, stop:1 #0a0a0f)"
     
+    # Backward compatibility aliases for legacy components
+    BG_SIDEBAR = BG_SECONDARY  # Old name compatibility
+    BG_CARD = BG_TERTIARY      # Old name compatibility
+    BG_INPUT = BG_QUATERNARY   # Old name compatibility
+    ACCENT_HOVER = ACCENT_QUATERNARY  # Old name compatibility
+    BORDER_FOCUS = ACCENT_PRIMARY     # Old name compatibility
+
+    
     # ==================== MAIN APPLICATION STYLE ====================
     
     APP_STYLE = f"""
