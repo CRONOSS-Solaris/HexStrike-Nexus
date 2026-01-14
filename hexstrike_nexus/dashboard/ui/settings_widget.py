@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QLineEdit, QCheckBox, QGroupBox, QPushButton, QFormLayout)
+                             QLineEdit, QCheckBox, QGroupBox, QPushButton, QFormLayout,
+                             QComboBox)
 from PyQt6.QtCore import Qt
 from .styles import HexStyle
 from ...i18n.manager import i18n
