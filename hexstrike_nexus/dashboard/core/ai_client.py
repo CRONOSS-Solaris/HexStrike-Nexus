@@ -1,124 +1,349 @@
+"""
+AI Client - Main orchestrator for AI providers and HexStrike integration
+"""
 import json
-import os
-import requests
+import re
+from typing import Optional, Dict, List, Generator
+from .ai_providers import OpenRouterProvider, OpenAIProvider, AnthropicProvider
+from .ai_provider_base import AIProviderBase
+from .conversation_manager import ConversationManager
+from .system_prompts import SystemPrompts
+from .database import DatabaseManager
 from .api_client import APIClient
 from .reporter import Reporter
 
+
 class AIClient:
-    def __init__(self):
-        self.api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
-        self.api_url = "https://openrouter.ai/api/v1/chat/completions" # Default to OpenRouter
-        self.model = "anthropic/claude-3.5-sonnet"
-
-    def process_user_request(self, user_input, selected_agent, language="pl"):
-        # Real AI Processing (if configured)
-        if self.api_key:
-            return self._query_llm(user_input, selected_agent, language)
-
-        # Fallback: Heuristic Mock Logic
-        return self._heuristic_mock(user_input, selected_agent, language)
-
-    def _query_llm(self, user_input, selected_agent, language):
+    """Main AI client that orchestrates providers and HexStrike integration"""
+    
+    PROVIDER_CLASSES = {
+        'openrouter': OpenRouterProvider,
+        'openai': OpenAIProvider,
+        'anthropic': AnthropicProvider
+    }
+    
+    def __init__(self, db: Optional[DatabaseManager] = None):
         """
-        Sends the request to an LLM to interpret the intent and generate a response.
-        This is a simplified implementation.
+        Initialize AI client
+        
+        Args:
+            db: Database manager instance (creates new if None)
         """
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-
-        system_prompt = f"""
-        You are HexStrike Nexus, an advanced cybersecurity assistant.
-        Current Agent Persona: {selected_agent}
-        Language: {language}
-
-        Your task is to analyze the user's request and suggest specific HexStrike tools or actions.
-        Available tools: nmap, nuclei, subfinder, gobuster, masscan.
+        self.db = db or DatabaseManager()
+        self.conversation_manager = ConversationManager(self.db)
+        self.active_provider: Optional[AIProviderBase] = None
+        self.active_provider_name: str = ""
+        
+        # Try to load active provider from database
+        self._load_active_provider()
+    
+    def _load_active_provider(self):
+        """Load active AI provider from database"""
+        config = self.db.get_active_ai_provider()
+        if config:
+            self.set_provider(
+                config['name'],
+                config['api_key'],
+                config['model'],
+                config.get('config', {})
+            )
+    
+    def set_provider(self, provider_name: str, api_key: str, model: str, 
+                    config: Dict = None) -> bool:
         """
-
-        data = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_input}
-            ]
-        }
-
+        Configure and set active AI provider
+        
+        Args:
+            provider_name: Provider identifier ('openrouter', 'openai', 'anthropic')
+            api_key: API key for the provider
+            model: Model identifier
+            config: Additional configuration
+            
+        Returns:
+            True if provider set successfully
+        """
+        if provider_name not in self.PROVIDER_CLASSES:
+            raise ValueError(f"Unknown provider: {provider_name}")
+        
+        provider_class = self.PROVIDER_CLASSES[provider_name]
+        config = config or {}
+        
         try:
-            # In a real scenario, we would make the request here.
-            # response = requests.post(self.api_url, headers=headers, json=data)
-            # return response.json()['choices'][0]['message']['content']
-            pass
+            self.active_provider = provider_class(api_key, model, **config)
+            self.active_provider_name = provider_name
+            
+            # Save to database as active provider
+            self.db.save_ai_provider_config(
+                provider_name, api_key, model, 
+                is_active=True, config=config
+            )
+            
+            return True
         except Exception as e:
-            return f"Error contacting AI Provider: {str(e)}"
-
-        # Fallback to mock if API call fails or is commented out for safety
-        return self._heuristic_mock(user_input, selected_agent, language)
-
-    def _heuristic_mock(self, user_input, selected_agent, language="pl"):
-        # Mock Intent Analysis
-        response_text = ""
-
-        # Basic help
-        if "help" in user_input.lower():
-            if language == "pl":
-                return "Jestem HexStrike Nexus. Mogę pomóc Ci w rekonesansie, skanowaniu podatności i zadaniach CTF. Wybierz agenta i wydaj polecenie."
+            print(f"Error setting provider: {e}")
+            return False
+    
+    def test_connection(self) -> tuple[bool, str]:
+        """
+        Test current provider connection
+        
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.active_provider:
+            return False, "No AI provider configured"
+        
+        try:
+            if self.active_provider.validate_connection():
+                return True, f"Connection to {self.active_provider_name} successful!"
             else:
-                return "I am HexStrike Nexus. I can help with recon, vulnerability scanning, and CTF tasks. Select an agent and give a command."
-
-        # Simple heuristic to extract domain/target
-        words = user_input.split()
-        target = None
-        for w in words:
-            if "." in w and not w.endswith(".") and len(w) > 3:
-                target = w
-                break
-
-        if target:
-            # 1. Select Tools
+                return False, "Connection failed - check API key"
+        except Exception as e:
+            return False, f"Error: {str(e)}"
+    
+    def send_message(self, conversation_id: str, message: str, 
+                    stream: bool = False) -> str:
+        """
+        Send message in context of conversation
+        
+        Args:
+            conversation_id: ID of conversation
+            message: User message
+            stream: Whether to stream response
+            
+        Returns:
+            AI response (or generator if streaming)
+        """
+        if not self.active_provider:
+            return "⚠️ No AI provider configured. Please configure an AI provider in Settings."
+        
+        # Get conversation info for agent type
+        conv_info = self.conversation_manager.get_conversation_info(conversation_id)
+        if not conv_info:
+            return "⚠️ Conversation not found"
+        
+        agent_type = conv_info.get('agent_type', 'General')
+        
+        # Add user message to conversation
+        self.conversation_manager.add_message(
+            conversation_id, 
+            'user', 
+            message
+        )
+        
+        # Get conversation history
+        history = self.conversation_manager.format_messages_for_api(
+            conversation_id,
+            limit=50  # Last 50 messages for context
+        )
+        
+        # Get appropriate system prompt
+        system_prompt = SystemPrompts.get_prompt_for_agent(agent_type)
+        
+        try:
+            if stream:
+                return self._stream_and_save_response(
+                    conversation_id, history, system_prompt
+                )
+            else:
+                # Get response from AI
+                response = self.active_provider.chat_completion(
+                    history, 
+                    system_prompt=system_prompt
+                )
+                
+                # Parse for HexStrike actions
+                response_with_actions = self._process_hexstrike_actions(response)
+                
+                # Save assistant message
+                self.conversation_manager.add_message(
+                    conversation_id,
+                    'assistant',
+                    response_with_actions,
+                    metadata={'model': self.active_provider.model}
+                )
+                
+                return response_with_actions
+                
+        except Exception as e:
+            error_msg = f"⚠️ AI Error: {str(e)}"
+            # Save error as system message
+            self.conversation_manager.add_message(
+                conversation_id,
+                'system',
+                error_msg
+            )
+            return error_msg
+    
+    def _stream_and_save_response(self, conversation_id: str, 
+                                  history: List[Dict], 
+                                  system_prompt: str) -> Generator:
+        """
+        Stream response and save when complete
+        
+        Args:
+            conversation_id: Conversation ID
+            history: Message history
+            system_prompt: System prompt
+            
+        Yields:
+            Response chunks
+        """
+        full_response = ""
+        
+        try:
+            for chunk in self.active_provider.stream_completion(history, system_prompt):
+                full_response += chunk
+                yield chunk
+            
+            # Process HexStrike actions after streaming complete
+            processed_response = self._process_hexstrike_actions(full_response)
+            
+            # If actions were executed, yield the action results
+            if processed_response != full_response:
+                action_results = processed_response[len(full_response):]
+                yield action_results
+            
+            # Save complete response
+            self.conversation_manager.add_message(
+                conversation_id,
+                'assistant',
+                processed_response,
+                metadata={'model': self.active_provider.model, 'streamed': True}
+            )
+            
+        except Exception as e:
+            error_msg = f"\n\n⚠️ Error: {str(e)}"
+            yield error_msg
+            
+            self.conversation_manager.add_message(
+                conversation_id,
+                'system',
+                f"Stream error: {str(e)}"
+            )
+    
+    def _process_hexstrike_actions(self, response: str) -> str:
+        """
+        Parse AI response for HexStrike actions and execute them
+        
+        Args:
+            response: AI response text
+            
+        Returns:
+            Response with action results appended
+        """
+        # Look for hexstrike action blocks
+        pattern = r'```hexstrike\s*\n(.*?)\n```'
+        matches = re.findall(pattern, response, re.DOTALL)
+        
+        if not matches:
+            return response
+        
+        action_results = "\n\n---\n**🔧 HexStrike Execution:**\n"
+        
+        for match in matches:
+            try:
+                action_data = json.loads(match)
+                result = self._execute_hexstrike_action(action_data)
+                action_results += f"\n{result}\n"
+            except json.JSONDecodeError:
+                action_results += "\n⚠️ Invalid action format\n"
+            except Exception as e:
+                action_results += f"\n⚠️ Action failed: {str(e)}\n"
+        
+        return response + action_results
+   
+    def _execute_hexstrike_action(self, action: Dict) -> str:
+        """
+        Execute HexStrike command based on AI decision
+        
+        Args:
+            action: Action dictionary with agent, target, action type
+            
+        Returns:
+            Execution result message
+        """
+        agent = action.get('agent')
+        target = action.get('target')
+        action_type = action.get('action', 'analyze')
+        
+        if not target:
+            return "⚠️ No target specified"
+        
+        result_msg = f"🎯 Target: **{target}**\n"
+        result_msg += f"🤖 Agent: **{agent}**\n"
+        result_msg += f"⚡ Action: **{action_type}**\n\n"
+        
+        # Execute based on action type
+        if action_type == 'full_recon' or action_type == 'analyze':
+            # 1. Select tools
             tools_resp = APIClient.select_tools(target)
             tools = tools_resp.get("tools", []) if tools_resp else []
-
-            # 2. Analyze/Plan
+            
+            result_msg += "**Tools Selected:**\n"
+            for tool in tools:
+                result_msg += f"- `{tool}`\n"
+            
+            # 2. Analyze target
             analysis = APIClient.analyze_target(target)
             plan = analysis.get("plan", []) if analysis else []
-
-            # 3. Generate Report (Simulated completion)
-            report_path = Reporter.generate_report(target, plan, language)
-
-            # 4. Generate Response
-            if language == "pl":
-                response_text += f"<b>Cel:</b> {target}<br>"
-                response_text += f"<b>Agent:</b> {selected_agent}<br>"
-                response_text += "<br><b>Uruchamiam narzędzia:</b><br>"
-                for tool in tools:
-                    response_text += f"- <code>{tool}</code><br>"
-
-                response_text += "<br><b>Plan działania:</b><br>"
-                for step in plan:
-                    response_text += f"- {step}<br>"
-
-                response_text += "<br><i>Zadanie wykonane. Znaleziono potencjalne wektory ataku.</i><br>"
-                response_text += f"<b>Raport gotowy:</b> <a href='file://{report_path}'>{report_path}</a>"
-            else:
-                response_text += f"<b>Target:</b> {target}<br>"
-                response_text += f"<b>Agent:</b> {selected_agent}<br>"
-                response_text += "<br><b>Starting tools:</b><br>"
-                for tool in tools:
-                    response_text += f"- <code>{tool}</code><br>"
-
-                response_text += "<br><b>Execution Plan:</b><br>"
-                for step in plan:
-                    response_text += f"- {step}<br>"
-
-                response_text += "<br><i>Task completed. Potential attack vectors found.</i><br>"
-                response_text += f"<b>Report ready:</b> <a href='file://{report_path}'>{report_path}</a>"
-
+            
+            result_msg += "\n**Execution Plan:**\n"
+            for step in plan:
+                result_msg += f"- {step}\n"
+            
+            # 3. Generate report
+            try:
+                report_path = Reporter.generate_report(target, plan, "pl")
+                result_msg += f"\n✅ **Report generated:** `{report_path}`"
+            except Exception as e:
+                result_msg += f"\n⚠️ Report generation failed: {str(e)}"
+                
+        elif action_type == 'scan':
+            # Quick scan
+            tools_resp = APIClient.select_tools(target)
+            tools = tools_resp.get("tools", []) if tools_resp else []
+            
+            result_msg += "**Scanning with:**\n"
+            for tool in tools[:3]:  # Limit to top 3 tools for quick scan
+                result_msg += f"- `{tool}`\n"
+            
+            result_msg += "\n🔄 Scan in progress... (check Telemetry for real-time status)"
+            
         else:
-            if language == "pl":
-                response_text = "Nie zrozumiałem celu. Podaj domenę lub IP do przeskanowania."
-            else:
-                response_text = "I didn't understand the target. Please provide a domain or IP."
+            result_msg += f"⚠️ Unknown action type: {action_type}"
+        
+        return result_msg
+    
+    def get_available_providers(self) -> List[str]:
+        """Get list of available provider names"""
+        return list(self.PROVIDER_CLASSES.keys())
+    
+    def get_current_provider_info(self) -> Optional[Dict]:
+        """Get current provider information"""
+        if not self.active_provider:
+            return None
+        
+        return {
+            'name': self.active_provider_name,
+            'model': self.active_provider.model
+        }
+    
+    # Legacy method for backward compatibility
+    def process_user_request(self, user_input: str, selected_agent: str, language: str = "pl") -> str:
+        """
+        Legacy method - creates temporary conversation
+        
+        DEPRECATED: Use send_message with proper conversation management instead
+        """
+        # Create temporary conversation
+        conv_id = self.conversation_manager.create_conversation(
+            "Legacy Chat",
+            selected_agent
+        )
+        
+        # Send message
+        response = self.send_message(conv_id, user_input)
+        
+        return response
 
-        return response_text
