@@ -112,8 +112,9 @@ class ChatWidget(QWidget):
         self.input_field.setMinimumHeight(40)
         message_row.addWidget(self.input_field)
 
-        self.send_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "send.svg")), "")
+        self.send_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "play-circle.svg")), "")
         self.send_btn.setObjectName("IconButton")
+        self.send_btn.setToolTip("Send message")
         self.send_btn.clicked.connect(self.send_message)
         message_row.addWidget(self.send_btn)
 

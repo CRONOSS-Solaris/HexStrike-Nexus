@@ -56,18 +56,17 @@ class AIProviderWidget(QWidget):
         self.provider_combo.currentTextChanged.connect(self.on_provider_changed)
         config_layout.addRow("Provider:", self.provider_combo)
         
-        # API Key input
+        # API Key input with show/hide toggle
+        api_key_layout = QHBoxLayout()
         self.api_key_input = QLineEdit()
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.api_key_input.setPlaceholderText("sk-...")
-        config_layout.addRow("API Key:", self.api_key_input)
         
-        # Show/Hide API key toggle
-        api_key_layout = QHBoxLayout()
         self.show_key_btn = QPushButton("Show")
         self.show_key_btn.setObjectName("SecondaryButton")
         self.show_key_btn.setMaximumWidth(80)
         self.show_key_btn.clicked.connect(self.toggle_api_key_visibility)
+        
         api_key_layout.addWidget(self.api_key_input)
         api_key_layout.addWidget(self.show_key_btn)
         config_layout.addRow("API Key:", api_key_layout)

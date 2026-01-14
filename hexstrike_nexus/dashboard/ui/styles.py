@@ -53,7 +53,7 @@ class HexStyle:
     # ==================== MAIN APPLICATION STYLE ====================
     
     APP_STYLE = f"""
-    /* === GLOBAL STYLES === */
+    /* === GLOBAL STYLES - MINIMALIST CLEAN === */
     QMainWindow {{
         background-color: {BG_MAIN};
     }}
@@ -62,24 +62,31 @@ class HexStyle:
         color: {TEXT_PRIMARY};
         font-family: 'Segoe UI', 'Inter', 'Roboto', sans-serif;
         font-size: 14px;
-        background-color: transparent;
+        background-color: {BG_MAIN};  /* Ensure all widgets have background */
     }}
     
-    /* === SIDEBAR === */
+    /* Frames and containers */
+    QFrame {{
+        background-color: {BG_MAIN};
+        border: none;
+    }}
+    
+    
+    /* === SIDEBAR - MINIMAL === */
     QListWidget#Sidebar {{
         background-color: {BG_SECONDARY};
         border: none;
         outline: none;
         border-right: 1px solid {BORDER_MEDIUM};
-        padding: 10px 5px;
+        padding: 8px;
     }}
     
     QListWidget#Sidebar::item {{
-        padding: 12px 16px;
-        margin: 4px 6px;
-        border-radius: 10px;
+        padding: 10px 14px;
+        margin: 2px 4px;
+        border-radius: 4px;
         color: {TEXT_SECONDARY};
-        font-weight: 500;
+        background-color: transparent;
     }}
     
     QListWidget#Sidebar::item:hover {{
@@ -89,25 +96,24 @@ class HexStyle:
     
     QListWidget#Sidebar::item:selected {{
         background-color: {ACCENT_PRIMARY};
-        color: {TEXT_PRIMARY};
-        font-weight: 600;
+        color: #ffffff;
     }}
     
-    /* === CONVERSATION SIDEBAR === */
+    /* === CONVERSATION SIDEBAR - MINIMAL === */
     QListWidget#ConversationList {{
         background-color: {BG_SECONDARY};
         border: none;
         outline: none;
-        padding: 5px;
+        padding: 6px;
     }}
     
     QListWidget#ConversationList::item {{
-        padding: 14px 12px;
-        margin: 3px 5px;
-        border-radius: 8px;
+        padding: 12px 10px;
+        margin: 2px 4px;
+        border-radius: 4px;
         background-color: {BG_TERTIARY};
-        border-left: 3px solid transparent;
-        min-height: 50px;
+        border-left: 2px solid transparent;
+        min-height: 45px;
     }}
     
     QListWidget#ConversationList::item:hover {{
@@ -120,33 +126,33 @@ class HexStyle:
         border-left-color: {ACCENT_PRIMARY};
     }}
     
-    /* === BUTTONS === */
+    
+    /* === BUTTONS - MINIMAL FLAT === */
     QPushButton {{
         background-color: {BG_TERTIARY};
         color: {TEXT_PRIMARY};
-        border: 1px solid {BORDER_MEDIUM};
-        border-radius: 2px;
-        padding: 6px 14px;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
         font-size: 13px;
         font-weight: normal;
     }}
     
     QPushButton:hover {{
         background-color: {BG_QUATERNARY};
-        border-color: {BORDER_HEAVY};
     }}
     
     QPushButton:pressed {{
-        background-color: {BG_SECONDARY};
+        background-color: {ACCENT_PRIMARY};
+        color: #ffffff;
     }}
     
     QPushButton:disabled {{
         background-color: {BG_SECONDARY};
         color: {TEXT_MUTED};
-        border-color: {BORDER_LIGHT};
     }}
     
-    /* Primary Button - VS Code Blue */
+    /* Primary Button - Clean Accent */
     QPushButton#PrimaryButton {{
         background-color: {ACCENT_PRIMARY};
         color: #ffffff;
@@ -160,41 +166,40 @@ class HexStyle:
     
     /* Secondary / Ghost Button */
     QPushButton#SecondaryButton {{
-        background-color: transparent;
+        background-color: {BG_SECONDARY};
         border: 1px solid {BORDER_MEDIUM};
         color: {TEXT_PRIMARY};
     }}
     
     QPushButton#SecondaryButton:hover {{
         border-color: {ACCENT_PRIMARY};
-        background-color: rgba(0, 122, 204, 0.1); /* VS Code blue with transparency */
+        background-color: {BG_TERTIARY};
         color: {ACCENT_PRIMARY};
     }}
     
-    /* Icon Button / Small Button */
+    /* Icon Button - Small and Minimal */
     QPushButton#IconButton {{
-        padding: 4px;
-        min-width: 28px;
-        max-width: 28px;
-        min-height: 28px;
-        max-height: 28px;
-        border-radius: 2px;
-        background-color: {BG_QUATERNARY};
-        border: 1px solid {BORDER_MEDIUM};
+        padding: 6px;
+        min-width: 32px;
+        max-width: 32px;
+        min-height: 32px;
+        max-height: 32px;
+        border-radius: 4px;
+        background-color: {BG_TERTIARY};
+        border: none;
     }}
     
     QPushButton#IconButton:hover {{
         background-color: {ACCENT_PRIMARY};
-        border-color: {ACCENT_PRIMARY};
         color: #ffffff;
     }}
     
-    /* === INPUT FIELDS === */
+    /* === INPUT FIELDS - MINIMAL === */
     QLineEdit, QTextEdit, QPlainTextEdit {{
-        background-color: {BG_QUATERNARY};
-        border: 1px solid {BORDER_LIGHT};
-        border-radius: 2px;
-        padding: 6px 8px;
+        background-color: {BG_TERTIARY};
+        border: 1px solid {BORDER_MEDIUM};
+        border-radius: 4px;
+        padding: 8px 10px;
         color: {TEXT_PRIMARY};
         selection-background-color: {ACCENT_PRIMARY};
         selection-color: #ffffff;
@@ -202,27 +207,28 @@ class HexStyle:
     
     QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
         border-color: {ACCENT_PRIMARY};
-        background-color: {BG_TERTIARY};
     }}
     
     QLineEdit:disabled, QTextEdit:disabled {{
-        background-color: {BG_TERTIARY};
+        background-color: {BG_SECONDARY};
         color: {TEXT_MUTED};
         border-color: {BORDER_LIGHT};
     }}
     
-    /* === COMBO BOX === */
+    
+    /* === COMBO BOX - MINIMAL === */
     QComboBox {{
-        background-color: {BG_QUATERNARY};
-        border: 2px solid {BORDER_LIGHT};
-        border-radius: 8px;
-        padding: 8px 14px;
+        background-color: {BG_TERTIARY};
+        border: 1px solid {BORDER_MEDIUM};
+        border-radius: 4px;
+        padding: 6px 12px;
         color: {TEXT_PRIMARY};
-        min-height: 20px;
+        min-height: 24px;
     }}
     
     QComboBox:hover {{
-        border-color: {ACCENT_SECONDARY};
+        border-color: {ACCENT_PRIMARY};
+        background-color: {BG_QUATERNARY};
     }}
     
     QComboBox:focus {{
@@ -231,24 +237,24 @@ class HexStyle:
     
     QComboBox::drop-down {{
         border: none;
-        width: 30px;
+        width: 24px;
     }}
     
     QComboBox::down-arrow {{
         image: none;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 6px solid {TEXT_SECONDARY};
-        margin-right: 8px;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid {TEXT_SECONDARY};
+        margin-right: 6px;
     }}
     
     QComboBox QAbstractItemView {{
         background-color: {BG_TERTIARY};
         border: 1px solid {BORDER_MEDIUM};
-        border-radius: 8px;
+        border-radius: 4px;
         selection-background-color: {ACCENT_PRIMARY};
-        selection-color: {TEXT_PRIMARY};
-        padding: 5px;
+        selection-color: #ffffff;
+        padding: 4px;
     }}
     
     /* === SCROLLBARS === */

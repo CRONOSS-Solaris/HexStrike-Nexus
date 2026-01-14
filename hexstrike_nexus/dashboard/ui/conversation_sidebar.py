@@ -47,7 +47,7 @@ class ConversationSidebar(QWidget):
         
         header_layout.addStretch()
         
-        new_chat_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "plus.svg")), "")
+        new_chat_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "chat-round.svg")), "")
         new_chat_btn.setObjectName("IconButton")
         new_chat_btn.clicked.connect(self.create_new_conversation)
         new_chat_btn.setToolTip("Create new conversation")
