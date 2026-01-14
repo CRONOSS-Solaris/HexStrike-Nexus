@@ -48,5 +48,9 @@
     "hexstrike_stats": "Statystyki HexStrike",
     "agent_label": "Agent:",
     "active_processes": "Aktywne Procesy",
-    "live_console": "Konsola na żywo"
+    "live_console": "Konsola na żywo",
+    "settings_title": "Ustawienia",
+    "settings_save": "Zapisz Konfigurację",
+    "settings_group_connection": "Połączenie",
+    "settings_group_appearance": "Wygląd"
 }

@@ -1,6 +1,7 @@
 """
 Modern Chat Widget with AI integration and conversation support
 """
+import os
 try:
     from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser,
                                  QLineEdit, QPushButton, QComboBox, QLabel, QFrame)
@@ -20,6 +21,7 @@ from typing import Optional
 from .styles import HexStyle
 from ..core.ai_client import AIClient
 from ..core.conversation_manager import ConversationManager
+from ..core.config import Config
 from ...i18n.manager import i18n
 
 
@@ -62,12 +64,6 @@ class ChatWidget(QWidget):
         self.agent_combo.addItems(['General', 'Bug Bounty', 'CTF', 'CVE Intelligence', 'Exploit Dev'])
         self.agent_combo.setVisible(False)
         header_layout.addWidget(self.agent_combo)
-        
-        self.model_combo = QComboBox()
-        self.model_combo.setMinimumWidth(180)
-        self.model_combo.setVisible(False)
-        self.model_combo.currentTextChanged.connect(self.on_model_changed)
-        header_layout.addWidget(self.model_combo)
 
         layout.addWidget(header)
 
@@ -85,26 +81,49 @@ class ChatWidget(QWidget):
         # --- Input Area ---
         input_container = QFrame()
         input_container.setStyleSheet(f"background-color: {HexStyle.BG_SECONDARY}; border-top: 1px solid {HexStyle.BORDER_LIGHT};")
-        input_container.setFixedHeight(80)
-        input_layout = QHBoxLayout(input_container)
+        input_layout = QVBoxLayout(input_container)
         input_layout.setContentsMargins(15, 10, 15, 10)
+        input_layout.setSpacing(8)
+        
+        # Model selector row - above message input
+        model_row = QHBoxLayout()
+        model_row.setSpacing(10)
+        
+        model_label = QLabel("Model:")
+        model_label.setStyleSheet(f"color: {HexStyle.TEXT_SECONDARY}; font-size: 13px;")
+        model_row.addWidget(model_label)
+        
+        self.model_combo = QComboBox()
+        self.model_combo.setMinimumWidth(250)
+        self.model_combo.setVisible(False)
+        self.model_combo.currentTextChanged.connect(self.on_model_changed)
+        model_row.addWidget(self.model_combo)
+        
+        model_row.addStretch()
+        input_layout.addLayout(model_row)
+        
+        # Message input row
+        message_row = QHBoxLayout()
+        message_row.setSpacing(10)
         
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText(i18n.get("chat_placeholder", default="Type your message..."))
         self.input_field.returnPressed.connect(self.send_message)
         self.input_field.setMinimumHeight(40)
-        input_layout.addWidget(self.input_field)
+        message_row.addWidget(self.input_field)
 
-        self.send_btn = QPushButton(QIcon("hexstrike_nexus/icons/send.svg"), "")
+        self.send_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "send.svg")), "")
         self.send_btn.setObjectName("IconButton")
         self.send_btn.clicked.connect(self.send_message)
-        input_layout.addWidget(self.send_btn)
+        message_row.addWidget(self.send_btn)
 
-        self.stop_btn = QPushButton(QIcon("hexstrike_nexus/icons/stop-circle.svg"), "")
+        self.stop_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "stop-circle.svg")), "")
         self.stop_btn.setObjectName("IconButton")
         self.stop_btn.clicked.connect(self.stop_ai_process)
         self.stop_btn.setVisible(False)
-        input_layout.addWidget(self.stop_btn)
+        message_row.addWidget(self.stop_btn)
+        
+        input_layout.addLayout(message_row)
 
         layout.addWidget(input_container)
         
@@ -244,15 +263,36 @@ class ChatWidget(QWidget):
             self.model_combo.blockSignals(True)
             self.model_combo.clear()
             
-            # Simplified model list for clarity
-            models_map = {
-                "openrouter": ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "google/gemini-pro-1.5"],
-                "openai": ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
-                "anthropic": ["claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-sonnet-20240229"]
-            }
-            models = models_map.get(provider_name, [model])
-            self.model_combo.addItems(models)
+            # Get list of configured providers (those with API keys)
+            configured_providers = self.ai_client.db.get_configured_providers()
             
+            # Model lists for each provider
+            all_models_map = {
+                "openrouter": ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "google/gemini-pro-1.5", 
+                              "anthropic/claude-3-opus", "openai/gpt-4-turbo", "meta-llama/llama-3.1-70b-instruct"],
+                "openai": ["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
+                "anthropic": ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+                "gemini": ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest", "gemini-pro", "gemini-pro-vision"]
+            }
+            
+            # Only show models from configured providers
+            available_models = []
+            for provider in configured_providers:
+                if provider in all_models_map:
+                    for model_name in all_models_map[provider]:
+                        # Add provider prefix if not already included
+                        display_name = f"{provider}: {model_name.split('/')[-1]}" if "/" not in model_name or provider != "openrouter" else model_name
+                        available_models.append((model_name, provider))
+            
+            # If no configured providers, show current model only
+            if not available_models:
+                available_models = [(model, provider_name)]
+            
+            # Add models to combo box
+            for model_name, _ in available_models:
+                self.model_combo.addItem(model_name)
+            
+            # Select current model
             index = self.model_combo.findText(model)
             self.model_combo.setCurrentIndex(index if index >= 0 else 0)
             
@@ -269,4 +309,3 @@ class ChatWidget(QWidget):
             self.input_field.setEnabled(False)
             self.send_btn.setEnabled(False)
             self.input_field.setPlaceholderText("Configure AI provider in Settings")
-

@@ -95,16 +95,16 @@ class MainWindow(QMainWindow):
         top_bar_layout.setSpacing(5)
         
         # Navigation buttons
-        self.chat_nav_btn = QPushButton(QIcon("hexstrike_nexus/icons/chat-round.svg"), "Chat")
+        self.chat_nav_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "chat-round.svg")), "Chat")
         self.chat_nav_btn.setObjectName("ActiveTab")
         self.chat_nav_btn.clicked.connect(lambda: self.switch_view(0))
         top_bar_layout.addWidget(self.chat_nav_btn)
 
-        self.telemetry_nav_btn = QPushButton(QIcon("hexstrike_nexus/icons/chart.svg"), "Telemetry")
+        self.telemetry_nav_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "chart.svg")), "Telemetry")
         self.telemetry_nav_btn.clicked.connect(lambda: self.switch_view(1))
         top_bar_layout.addWidget(self.telemetry_nav_btn)
 
-        self.settings_nav_btn = QPushButton(QIcon("hexstrike_nexus/icons/settings.svg"), "Settings")
+        self.settings_nav_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "settings.svg")), "Settings")
         self.settings_nav_btn.clicked.connect(lambda: self.switch_view(2))
         top_bar_layout.addWidget(self.settings_nav_btn)
         
@@ -272,10 +272,13 @@ Ready to begin? Configure your AI provider in Settings! 🚀
         self.telemetry_nav_btn.setObjectName("ActiveTab" if index == 1 else "")
         self.settings_nav_btn.setObjectName("ActiveTab" if index == 2 else "")
         
-        # Refresh styles
-        self.chat_nav_btn.setStyleSheet(self.chat_nav_btn.styleSheet())
-        self.telemetry_nav_btn.setStyleSheet(self.telemetry_nav_btn.styleSheet())
-        self.settings_nav_btn.setStyleSheet(self.settings_nav_btn.styleSheet())
+        # Refresh styles - force Qt to re-evaluate with new object names
+        self.chat_nav_btn.style().unpolish(self.chat_nav_btn)
+        self.chat_nav_btn.style().polish(self.chat_nav_btn)
+        self.telemetry_nav_btn.style().unpolish(self.telemetry_nav_btn)
+        self.telemetry_nav_btn.style().polish(self.telemetry_nav_btn)
+        self.settings_nav_btn.style().unpolish(self.settings_nav_btn)
+        self.settings_nav_btn.style().polish(self.settings_nav_btn)
         
         # Show/hide conversation sidebar based on view
         if index == 0:  # Chat view

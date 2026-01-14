@@ -48,5 +48,9 @@
     "hexstrike_stats": "HexStrike Stats",
     "agent_label": "Agent:",
     "active_processes": "Active Processes",
-    "live_console": "Live Console"
+    "live_console": "Live Console",
+    "settings_title": "Settings",
+    "settings_save": "Save Configuration",
+    "settings_group_connection": "Connection",
+    "settings_group_appearance": "Appearance"
 }

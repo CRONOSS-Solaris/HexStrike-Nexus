@@ -344,6 +344,21 @@ class DatabaseManager:
         
         conn.close()
         return providers
+    
+    def get_configured_providers(self) -> List[Dict]:
+        """Get list of providers that have API keys configured"""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        
+        c.execute('''SELECT DISTINCT name FROM ai_provider_configs 
+                    WHERE api_key_encrypted IS NOT NULL''')
+        
+        providers = []
+        for row in c.fetchall():
+            providers.append(row[0])
+        
+        conn.close()
+        return providers
 
     # ========== Legacy Methods (Backward Compatibility) ==========
 

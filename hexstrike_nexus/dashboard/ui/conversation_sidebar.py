@@ -1,6 +1,7 @@
 """
 Conversation Sidebar Widget - manages conversation list
 """
+import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QListWidget, QListWidgetItem, QLineEdit, QLabel,
                              QMenu, QInputDialog, QMessageBox)
@@ -8,6 +9,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QIcon, QCursor
 from .styles import HexStyle
 from ..core.conversation_manager import ConversationManager
+from ..core.config import Config
 from ...i18n.manager import i18n
 import time
 
@@ -35,6 +37,7 @@ class ConversationSidebar(QWidget):
         
         # Header with New Chat button
         header = QWidget()
+        header.setStyleSheet(f"background-color: {HexStyle.BG_SECONDARY}; border-bottom: 1px solid {HexStyle.BORDER_LIGHT};")
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(10, 15, 10, 10)
         
@@ -44,7 +47,7 @@ class ConversationSidebar(QWidget):
         
         header_layout.addStretch()
         
-        new_chat_btn = QPushButton(QIcon("hexstrike_nexus/icons/plus.svg"), "")
+        new_chat_btn = QPushButton(QIcon(os.path.join(Config.ICONS_DIR, "plus.svg")), "")
         new_chat_btn.setObjectName("IconButton")
         new_chat_btn.clicked.connect(self.create_new_conversation)
         new_chat_btn.setToolTip("Create new conversation")
@@ -201,8 +204,8 @@ class ConversationSidebar(QWidget):
         """)
         
         # Only Delete and Archive actions - no Rename (AI names the chats)
-        delete_action = menu.addAction(QIcon("hexstrike_nexus/icons/trash-bin.svg"), "Delete")
-        archive_action = menu.addAction(QIcon("hexstrike_nexus/icons/archive.svg"), "Archive")
+        delete_action = menu.addAction(QIcon(os.path.join(Config.ICONS_DIR, "trash-bin.svg")), "Delete")
+        archive_action = menu.addAction(QIcon(os.path.join(Config.ICONS_DIR, "archive.svg")), "Archive")
         
         action = menu.exec(self.conversation_list.mapToGlobal(position))
         

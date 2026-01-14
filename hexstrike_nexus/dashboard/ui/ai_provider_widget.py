@@ -120,6 +120,9 @@ class AIProviderWidget(QWidget):
         
         <p><b>Anthropic:</b> <a href="https://console.anthropic.com/settings/keys">https://console.anthropic.com/settings/keys</a><br/>
         Claude 3.5 Sonnet, Opus, Haiku</p>
+        
+        <p><b>Google Gemini:</b> <a href="https://aistudio.google.com/app/apikey">https://aistudio.google.com/app/apikey</a><br/>
+        Gemini 1.5 Pro, Flash, Vision</p>
         """)
         help_layout.addWidget(help_text)
         
@@ -156,6 +159,13 @@ class AIProviderWidget(QWidget):
                 "claude-3-opus-20240229",
                 "claude-3-sonnet-20240229",
                 "claude-3-haiku-20240307"
+            ]
+        elif provider_name == "gemini":
+            models = [
+                "gemini-1.5-pro-latest",
+                "gemini-1.5-flash-latest",
+                "gemini-pro",
+                "gemini-pro-vision"
             ]
         else:
             models = []

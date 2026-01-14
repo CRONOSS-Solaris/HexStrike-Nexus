@@ -53,12 +53,19 @@ class SettingsWidget(QWidget):
         vbox = QVBoxLayout()
         vbox.setContentsMargins(20, 25, 20, 20)
         
-        # Language (Mockup for now as it requires restart)
+        # Language selection with dropdown
         lang_layout = QHBoxLayout()
         lang_layout.addWidget(QLabel("Language:"))
-        self.lang_input = QLineEdit(Config.LANGUAGE)
-        self.lang_input.setPlaceholderText("pl / en")
-        lang_layout.addWidget(self.lang_input)
+        self.lang_combo = QComboBox()
+        self.lang_combo.addItem("English", "en")
+        self.lang_combo.addItem("Polski", "pl")
+        
+        # Set current language
+        current_lang = Config.LANGUAGE
+        index = 0 if current_lang == "en" else 1
+        self.lang_combo.setCurrentIndex(index)
+        
+        lang_layout.addWidget(self.lang_combo)
         
         vbox.addLayout(lang_layout)
         
@@ -73,8 +80,31 @@ class SettingsWidget(QWidget):
 
     def save_settings(self):
         # Logic to save to Config or file
-        # For now just print
+        # Get selected language code from combobox
+        selected_lang = self.lang_combo.currentData()
+        
+        # Save language using Config
+        if selected_lang and selected_lang != Config.LANGUAGE:
+            Config.save_language(selected_lang)
+            
+            # Reload i18n with new language
+            i18n.load_language(selected_lang)
+            
+            # Notify user that language was changed
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self,
+                "Settings Saved" if selected_lang == "en" else "Zapisano Ustawienia",
+                "Language changed successfully. Some UI elements will update immediately." if selected_lang == "en" 
+                else "Język został zmieniony pomyślnie. Niektóre elementy interfejsu zaktualizują się natychmiast."
+            )
+            
+            # Update UI labels with new language
+            self.findChild(QLabel).setText(i18n.get("settings_title", default="Settings"))
+        
+        # Save other settings
         print("Settings Saved:")
         print(f"Host: {self.host_input.text()}")
         print(f"Port: {self.port_input.text()}")
-        # In a real app, we would write to .env or config.py
+        print(f"Language: {selected_lang}")
+

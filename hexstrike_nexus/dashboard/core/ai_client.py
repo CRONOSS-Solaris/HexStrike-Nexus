@@ -4,7 +4,7 @@ AI Client - Main orchestrator for AI providers and HexStrike integration
 import json
 import re
 from typing import Optional, Dict, List, Generator
-from .ai_providers import OpenRouterProvider, OpenAIProvider, AnthropicProvider
+from .ai_providers import OpenRouterProvider, OpenAIProvider, AnthropicProvider, GeminiProvider
 from .ai_provider_base import AIProviderBase
 from .conversation_manager import ConversationManager
 from .system_prompts import SystemPrompts
@@ -19,7 +19,8 @@ class AIClient:
     PROVIDER_CLASSES = {
         'openrouter': OpenRouterProvider,
         'openai': OpenAIProvider,
-        'anthropic': AnthropicProvider
+        'anthropic': AnthropicProvider,
+        'gemini': GeminiProvider
     }
     
     def __init__(self, db: Optional[DatabaseManager] = None):

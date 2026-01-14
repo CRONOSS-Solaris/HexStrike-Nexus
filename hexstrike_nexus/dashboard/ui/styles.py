@@ -394,21 +394,21 @@ class HexStyle:
                 font-family: 'Segoe UI', 'Inter', sans-serif;
                 background-color: {BG_MAIN};
                 color: {TEXT_PRIMARY};
-                padding: 20px;
-                line-height: 1.6;
+                padding: 24px;
+                line-height: 1.65;
             }}
             
             .message-container {{
-                margin-bottom: 20px;
+                margin-bottom: 24px;
                 display: flex;
                 flex-direction: column;
-                animation: slideIn 0.3s ease-out;
+                animation: slideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             }}
             
             @keyframes slideIn {{
                 from {{
                     opacity: 0;
-                    transform: translateY(10px);
+                    transform: translateY(12px);
                 }}
                 to {{
                     opacity: 1;
@@ -419,7 +419,7 @@ class HexStyle:
             .message-header {{
                 font-size: 12px;
                 font-weight: 600;
-                margin-bottom: 6px;
+                margin-bottom: 8px;
                 color: {TEXT_SECONDARY};
                 display: flex;
                 align-items: center;
@@ -427,12 +427,13 @@ class HexStyle:
             }}
             
             .message-bubble {{
-                padding: 14px 18px;
-                border-radius: 12px;
+                padding: 16px 20px;
+                border-radius: 14px;
                 max-width: 85%;
-                line-height: 1.5;
+                line-height: 1.65;
                 word-wrap: break-word;
                 position: relative;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             }}
             
             /* User Messages - VS Code blue */
@@ -441,9 +442,9 @@ class HexStyle:
             }}
             
             .user-bubble {{
-                background-color: {ACCENT_PRIMARY};
+                background: linear-gradient(135deg, {ACCENT_PRIMARY} 0%, {ACCENT_TERTIARY} 100%);
                 color: #ffffff;
-                border-bottom-right-radius: 2px;
+                border-bottom-right-radius: 4px;
             }}
             
             /* AI Messages */
@@ -453,8 +454,9 @@ class HexStyle:
             
             .ai-bubble {{
                 background-color: {BG_TERTIARY};
-                border: 1px solid {BORDER_LIGHT};
+                border: 1px solid {BORDER_MEDIUM};
                 border-bottom-left-radius: 4px;
+                color: {TEXT_PRIMARY};
             }}
             
             /* System Messages */
@@ -466,29 +468,31 @@ class HexStyle:
                 background-color: transparent;
                 color: {TEXT_SECONDARY};
                 font-style: italic;
-                font-size: 13px;
+                font-size: 14px;
                 text-align: center;
-                border: 1px dashed {BORDER_LIGHT};
-                border-radius: 8px;
+                border: 1px dashed {BORDER_MEDIUM};
+                border-radius: 10px;
+                padding: 12px 16px;
             }}
             
             /* Code Blocks */
             code {{
-                background-color: rgba(0, 0, 0, 0.4);
-                padding: 3px 6px;
-                border-radius: 4px;
-                font-family: 'Consolas', 'Monaco', monospace;
+                background-color: rgba(0, 0, 0, 0.5);
+                padding: 3px 8px;
+                border-radius: 5px;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
                 font-size: 13px;
                 color: {ACCENT_SECONDARY};
             }}
             
             pre {{
-                background-color: #000;
-                padding: 14px;
-                border-radius: 8px;
+                background-color: #0d0d0d;
+                padding: 16px;
+                border-radius: 10px;
                 overflow-x: auto;
-                border-left: 3px solid {ACCENT_PRIMARY};
-                margin: 10px 0;
+                border-left: 4px solid {ACCENT_PRIMARY};
+                margin: 12px 0;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             }}
             
             pre code {{
@@ -502,35 +506,71 @@ class HexStyle:
                 color: {ACCENT_SECONDARY};
                 text-decoration: none;
                 font-weight: 500;
+                border-bottom: 1px dotted {ACCENT_SECONDARY};
+                transition: all 0.2s;
             }}
             
             a:hover {{
                 color: {ACCENT_PRIMARY};
-                text-decoration: underline;
+                border-bottom-color: {ACCENT_PRIMARY};
             }}
             
             /* Lists */
             ul, ol {{
-                margin-left: 20px;
-                margin-top: 8px;
+                margin-left: 24px;
+                margin-top: 10px;
             }}
             
             li {{
-                margin-bottom: 4px;
+                margin-bottom: 6px;
             }}
             
             /* Headings */
             h1, h2, h3, h4 {{
                 color: {ACCENT_SECONDARY};
-                margin-top: 16px;
-                margin-bottom: 10px;
+                margin-top: 20px;
+                margin-bottom: 12px;
+                font-weight: 600;
             }}
+            
+            h1 {{ font-size: 24px; }}
+            h2 {{ font-size: 20px; }}
+            h3 {{ font-size: 17px; }}
+            h4 {{ font-size: 15px; }}
             
             /* Horizontal Rule */
             hr {{
                 border: none;
-                border-top: 1px solid {BORDER_LIGHT};
-                margin: 16px 0;
+                border-top: 2px solid {BORDER_MEDIUM};
+                margin: 20px 0;
+            }}
+            
+            /* Tables */
+            table {{
+                border-collapse: collapse;
+                margin: 12px 0;
+                width: 100%;
+            }}
+            
+            th, td {{
+                border: 1px solid {BORDER_MEDIUM};
+                padding: 10px 14px;
+                text-align: left;
+            }}
+            
+            th {{
+                background-color: {BG_TERTIARY};
+                font-weight: 600;
+                color: {ACCENT_SECONDARY};
+            }}
+            
+            /* Blockquotes */
+            blockquote {{
+                border-left: 4px solid {ACCENT_SECONDARY};
+                padding-left: 16px;
+                margin: 12px 0;
+                font-style: italic;
+                color: {TEXT_SECONDARY};
             }}
         </style>
     </head>
@@ -544,14 +584,17 @@ class HexStyle:
         Generate HTML for a chat message
         
         Args:
-            role: 'user', 'assistant', or 'system'
+            role: 'user', 'assistant', 'system', or 'typing'
             content: Message content
             username: Optional username to display
             
         Returns:
             HTML string for the message
         """
-        if role == "user":
+        if role == "typing":
+            # Special typing indicator
+            return cls.get_typing_indicator_html()
+        elif role == "user":
             header_name = username or "You"
             return f"""
             <div class='message-container user-container'>
@@ -572,3 +615,65 @@ class HexStyle:
                 <div class='message-bubble system-bubble'>{content}</div>
             </div>
             """
+    
+    @classmethod
+    def get_typing_indicator_html(cls) -> str:
+        """Generate HTML for typing indicator with bouncing dots"""
+        return f'''
+        <div class='message-container ai-container' id='typing-indicator'>
+            <div class='message-header'>HexStrike Nexus</div>
+            <div class='message-bubble ai-bubble typing-bubble'>
+                <span class='typing-text'>AI is thinking</span>
+                <span class='typing-dots'>
+                    <span class='dot'></span>
+                    <span class='dot'></span>
+                    <span class='dot'></span>
+                </span>
+            </div>
+        </div>
+        <style>
+            .typing-bubble {{
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }}
+            
+            .typing-text {{
+                color: {cls.TEXT_SECONDARY};
+                font-style: italic;
+                font-size: 13px;
+            }}
+            
+            .typing-dots {{
+                display: flex;
+                gap: 4px;
+            }}
+            
+            .typing-dots .dot {{
+                width: 6px;
+                height: 6px;
+                background-color: {cls.ACCENT_PRIMARY};
+                border-radius: 50%;
+                animation: bounce 1.4s infinite ease-in-out;
+            }}
+            
+            .typing-dots .dot:nth-child(1) {{
+                animation-delay: -0.32s;
+            }}
+            
+            .typing-dots .dot:nth-child(2) {{
+                animation-delay: -0.16s;
+            }}
+            
+            @keyframes bounce {{
+                0%, 80%, 100% {{
+                    transform: scale(0);
+                    opacity: 0.5;
+                }}
+                40% {{
+                    transform: scale(1);
+                    opacity: 1;
+                }}
+            }}
+        </style>
+        '''
