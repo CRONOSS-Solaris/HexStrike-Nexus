@@ -24,8 +24,9 @@ class Config:
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     MOCK_SERVER_PATH = os.path.join(BASE_DIR, "mock_server.py")
     
-    # Icons directory - absolute path (icons are in same dir as dashboard)
-    ICONS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "icons")
+    # Icons directory - absolute path (icons are in hexstrike_nexus/icons, not dashboard/icons)
+    # __file__ is in dashboard/core/config.py, so we go up 3 levels to hexstrike_nexus root
+    ICONS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "icons")
 
     # Use real server if available, otherwise use mock
     SERVER_SCRIPT_PATH = REAL_SERVER_PATH if os.path.exists(REAL_SERVER_PATH) else MOCK_SERVER_PATH

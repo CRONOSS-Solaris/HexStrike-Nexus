@@ -442,25 +442,27 @@ class HexStyle:
                 box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             }}
             
-            /* User Messages - VS Code blue */
+            
+            /* User Messages - Blue accent */
             .user-container {{
                 align-items: flex-end;
             }}
             
             .user-bubble {{
-                background: linear-gradient(135deg, {ACCENT_PRIMARY} 0%, {ACCENT_TERTIARY} 100%);
+                background: {ACCENT_PRIMARY};
                 color: #ffffff;
                 border-bottom-right-radius: 4px;
             }}
             
-            /* AI Messages */
+            
+            /* AI Messages - Clearly visible with different background */
             .ai-container {{
                 align-items: flex-start;
             }}
             
             .ai-bubble {{
-                background-color: {BG_TERTIARY};
-                border: 1px solid {BORDER_MEDIUM};
+                background-color: {BG_SECONDARY};
+                border: 1px solid {BORDER_HEAVY};
                 border-bottom-left-radius: 4px;
                 color: {TEXT_PRIMARY};
             }}
