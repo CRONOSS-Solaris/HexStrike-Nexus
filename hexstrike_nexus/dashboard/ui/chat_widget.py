@@ -203,16 +203,20 @@ class ChatWidget(QWidget):
         )
         self.ai_worker.response_ready.connect(self._handle_ai_response)
         self.ai_worker.error_occurred.connect(self._handle_ai_error)
-        self.ai_worker.finished.connect(lambda: self.set_thinking_state(False))
         self.ai_worker.start()
     
     def _handle_ai_response(self, response):
         """Handle AI response on main thread"""
+        # Remove typing indicator first, THEN add response
+        self._remove_typing_indicator()
         self.display_message("assistant", response)
+        self.set_thinking_state(False)
     
     def _handle_ai_error(self, error_msg):
         """Handle AI error on main thread"""
+        self._remove_typing_indicator()
         self.display_message("system", error_msg)
+        self.set_thinking_state(False)
     
     def stop_ai_process(self):
         """Stops the AI generation process."""
