@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(main_layout)
 
         # Splitter for resizable panels
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(splitter)
 
         # Chat Panel (Left/Center)
