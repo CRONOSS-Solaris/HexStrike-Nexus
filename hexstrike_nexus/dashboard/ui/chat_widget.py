@@ -5,7 +5,7 @@ import os
 try:
     from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser,
                                  QLineEdit, QPushButton, QComboBox, QLabel, QFrame)
-    from PyQt6.QtCore import Qt, QTimer
+    from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
     from PyQt6.QtGui import QIcon
     try:
         from PyQt6.QtWebEngineWidgets import QWebEngineView
@@ -23,6 +23,30 @@ from ..core.ai_client import AIClient
 from ..core.conversation_manager import ConversationManager
 from ..core.config import Config
 from ...i18n.manager import i18n
+
+
+class AIWorker(QThread):
+    """Worker thread for AI calls to prevent UI blocking"""
+    response_ready = pyqtSignal(str)
+    error_occurred = pyqtSignal(str)
+    
+    def __init__(self, ai_client, conversation_id, user_text):
+        super().__init__()
+        self.ai_client = ai_client
+        self.conversation_id = conversation_id
+        self.user_text = user_text
+    
+    def run(self):
+        """Run AI call in background thread"""
+        try:
+            response = self.ai_client.send_message(
+                self.conversation_id,
+                self.user_text,
+                stream=False
+            )
+            self.response_ready.emit(response)
+        except Exception as e:
+            self.error_occurred.emit(f"Error: {str(e)}")
 
 
 class ChatWidget(QWidget):
@@ -171,17 +195,24 @@ class ChatWidget(QWidget):
         
         self.set_thinking_state(True)
         
-        try:
-            response = self.ai_client.send_message(
-                self.current_conversation_id,
-                user_text,
-                stream=False
-            )
-            self.display_message("assistant", response)
-        except Exception as e:
-            self.display_message("system", f"Error: {str(e)}")
-        finally:
-            self.set_thinking_state(False)
+        # Create and start worker thread for AI call
+        self.ai_worker = AIWorker(
+            self.ai_client,
+            self.current_conversation_id,
+            user_text
+        )
+        self.ai_worker.response_ready.connect(self._handle_ai_response)
+        self.ai_worker.error_occurred.connect(self._handle_ai_error)
+        self.ai_worker.finished.connect(lambda: self.set_thinking_state(False))
+        self.ai_worker.start()
+    
+    def _handle_ai_response(self, response):
+        """Handle AI response on main thread"""
+        self.display_message("assistant", response)
+    
+    def _handle_ai_error(self, error_msg):
+        """Handle AI error on main thread"""
+        self.display_message("system", error_msg)
     
     def stop_ai_process(self):
         """Stops the AI generation process."""
